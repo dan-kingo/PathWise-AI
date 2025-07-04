@@ -16,7 +16,7 @@
     "express-session": "^1.18.1",
     "helmet": "^7.1.0",
     "mongoose": "^8.16.1",
-    "passport": "^0.7.0",
+    "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
@@ -25,6 +25,8 @@
     "@types/express-session": "^1.18.2",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20.10.4",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.16",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   }

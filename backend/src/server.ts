@@ -1,6 +1,10 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
+import session from "express-session";
+import passport from "passport";
+import "./configs/passport.js"; // Ensure passport is configured
 import connectDB from "./configs/db.js";
+import authRoutes from "./routes/auth.route.js";
 
 dotenv.config();
 
@@ -8,6 +12,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+  })
+)
+
+app.use(passport.initialize())
+app.use(passport.session())
+
+app.use('/auth', authRoutes)
 
 // DB connection
 connectDB();
