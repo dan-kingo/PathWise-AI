@@ -75,7 +75,7 @@ router.get('/me', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       user: {
         id: user._id,
@@ -87,12 +87,12 @@ router.get('/me', authenticate, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    return res.status(500).json({ message: 'Server error', error });
   }
 });
 
 // Logout
-router.post('/logout', (req, res) => {
+router.post('/logout', (_req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });
 

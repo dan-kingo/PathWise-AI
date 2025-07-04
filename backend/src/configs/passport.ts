@@ -33,16 +33,22 @@ passport.use(new GoogleStrategy(
       } else if (!user.googleId) {
         // Link Google account to existing user
         user.googleId = profile.id;
-        user.provider = user.provider ? `${user.provider},google` : 'google';
+        if (user.provider && !user.provider.split(',').includes('google')) {
+          const providers = user.provider.split(',');
+          providers.push('google');
+          user.provider = Array.from(new Set(providers)).sort().join(',') as typeof user.provider;
+        } else {
+          user.provider = 'google';
+        }
         await user.save();
       }
 
       return done(null, user);
     } catch (error) {
-      return done(error, null);
+      return done(error, undefined);
     }
   }
-));
+)); 
 
 // LinkedIn Strategy
 passport.use(new LinkedInStrategy(
@@ -72,7 +78,13 @@ passport.use(new LinkedInStrategy(
       } else if (!user.linkedinId) {
         // Link LinkedIn account to existing user
         user.linkedinId = profile.id;
-        user.provider = user.provider ? `${user.provider},linkedin` : 'linkedin';
+        if (user.provider && !user.provider.split(',').includes('linkedin')) {  
+          const providers = user.provider.split(',');
+          providers.push('linkedin');
+          user.provider = Array.from(new Set(providers)).sort().join(',') as typeof user.provider;
+        } else {
+          user.provider = 'linkedin';
+        }
         await user.save();
       }
 
