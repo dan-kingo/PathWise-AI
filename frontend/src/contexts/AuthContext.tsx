@@ -42,9 +42,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = (provider: 'google') => {
-    const authUrl = api.getGoogleAuthUrl();
-    window.location.href = authUrl;
+  const login = async (provider: 'google' | 'email-login' | 'email-signup' | 'forgot-password', data?: any) => {
+    if (provider === 'google') {
+      const authUrl = api.getGoogleAuthUrl();
+      window.location.href = authUrl;
+      return;
+    }
+
+    if (provider === 'forgot-password') {
+      window.location.href = '/forgot-password';
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let response;
+      if (provider === 'email-signup') {
+        response = await api.signup(data.email, data.password, data.name);
+        if (response.success) {
+          // Show success message for signup
+          alert('Account created successfully! Please check your email to verify your account.');
+          return;
+        }
+      } else if (provider === 'email-login') {
+        response = await api.login(data.email, data.password);
+        if (response.success && response.token) {
+          localStorage.setItem('auth_token', response.token);
+          setUser(response.user);
+          return;
+        }
+      }
+      
+      throw new Error(response?.message || 'Authentication failed');
+    } catch (error: any) {
+      if (error.needsVerification) {
+        alert('Please verify your email before logging in. Check your inbox for the verification link.');
+      }
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {

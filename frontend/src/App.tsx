@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import AuthCallback from './components/AuthCallback';
+import VerifyEmail from './components/VerifyEmail';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import LoadingSpinner from './components/LoadingSpinner';
 
 // Protected Route Component
@@ -44,6 +47,30 @@ const AppRoutes: React.FC = () => {
         element={
           <PublicRoute>
             <LoginPage />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/forgot-password" 
+        element={
+          <PublicRoute>
+            <ForgotPassword />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/reset-password" 
+        element={
+          <PublicRoute>
+            <ResetPassword />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/verify-email" 
+        element={
+          <PublicRoute>
+            <VerifyEmail />
           </PublicRoute>
         } 
       />
