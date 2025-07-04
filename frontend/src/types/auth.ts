@@ -15,7 +15,9 @@ export interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-export interface AuthResponse {
+export interface ApiResponse<T> {
   success: boolean;
-  user: User;
+  user?: T;
+  message?: string;
+  error?: string;
 }

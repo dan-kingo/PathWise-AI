@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, AuthContextType } from '../types/auth';
 import { api } from '../services/api';
 
@@ -12,59 +12,54 @@ export const useAuth = () => {
   return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('auth_token');
-      
-      if (token) {
-        try {
-          const response = await api.getProfile(token);
-          if (response.success) {
-            setUser(response.user);
-          } else {
-            localStorage.removeItem('auth_token');
-          }
-        } catch (error) {
-          console.error('Auth initialization failed:', error);
-          localStorage.removeItem('auth_token');
-        }
-      }
-      
-      setLoading(false);
-    };
-
-    initAuth();
+    checkAuthStatus();
   }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const response = await api.getCurrentUser();
+      if (response.success && response.user) {
+        setUser(response.user);
+      } else {
+        localStorage.removeItem('auth_token');
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('auth_token');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = (provider: 'google' | 'linkedin') => {
     const authUrl = provider === 'google' 
-      ? 'http://localhost:3000/auth/google'
-      : 'http://localhost:3000/auth/linkedin';
+      ? api.getGoogleAuthUrl() 
+      : api.getLinkedInAuthUrl();
     
     window.location.href = authUrl;
   };
 
   const logout = async () => {
-    const token = localStorage.getItem('auth_token');
-    
-    if (token) {
-      try {
-        await api.logout(token);
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
+    setLoading(true);
+    try {
+      await api.logout();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    localStorage.removeItem('auth_token');
-    setUser(null);
   };
 
   const value: AuthContextType = {

@@ -12,13 +12,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
-  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 // Public Route Component (redirect to dashboard if authenticated)
@@ -27,7 +27,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -36,36 +36,43 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
-function App() {
+const AppRoutes: React.FC = () => {
+  return (
+    <Routes>
+      <Route 
+        path="/login" 
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route path="/auth/success" element={<AuthCallback />} />
+      <Route path="/auth/error" element={<AuthCallback />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+};
+
+const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
         <div className="App">
-          <Routes>
-            <Route 
-              path="/" 
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/auth/success" element={<AuthCallback />} />
-            <Route path="/auth/error" element={<AuthCallback />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <AppRoutes />
         </div>
       </Router>
     </AuthProvider>
   );
-}
+};
 
 export default App;
