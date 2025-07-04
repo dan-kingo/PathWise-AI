@@ -40,7 +40,6 @@ export const api = {
     }
   },
 
-  // OAuth login URLs
+  // OAuth login URL
   getGoogleAuthUrl: () => `${API_BASE_URL}/auth/google`,
-  getLinkedInAuthUrl: () => `${API_BASE_URL}/auth/linkedin`,
 };

@@ -10,7 +10,7 @@ export interface User {
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (provider: 'google' | 'linkedin') => void;
+  login: (provider: 'google') => void;
   logout: () => void;
   isAuthenticated: boolean;
 }

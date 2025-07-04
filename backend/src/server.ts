@@ -62,7 +62,6 @@ app.get("/", (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       google: "/auth/google",
-      linkedin: "/auth/linkedin",
       profile: "/auth/me",
       logout: "/auth/logout"
     }

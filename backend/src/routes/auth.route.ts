@@ -35,41 +35,11 @@ router.get('/google/callback',
   }
 );
 
-// LinkedIn Auth Routes
-router.get('/linkedin', passport.authenticate('linkedin'));
-
-router.get('/linkedin/callback',
-  passport.authenticate('linkedin', { session: false }),
-  (req, res) => {
-    const user = req.user as any;
-
-    if (!user) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/error?message=Authentication failed`);
-    }
-
-    // Create JWT
-    const token = jwt.sign(
-      { 
-        id: user._id, 
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar,
-        provider: user.provider
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
-    );
-
-    // Redirect to frontend with token
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/success?token=${token}`);
-  }
-);
-
 // Get current user
 router.get('/me', authenticate, async (req, res) => {
   try {
     const User = (await import('../models/user.model.js')).default;
-    const user = await User.findById((req.user as any).id).select('-googleId -linkedinId');
+    const user = await User.findById((req.user as any).id).select('-googleId');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

@@ -42,11 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = (provider: 'google' | 'linkedin') => {
-    const authUrl = provider === 'google' 
-      ? api.getGoogleAuthUrl() 
-      : api.getLinkedInAuthUrl();
-    
+  const login = (provider: 'google') => {
+    const authUrl = api.getGoogleAuthUrl();
     window.location.href = authUrl;
   };
 

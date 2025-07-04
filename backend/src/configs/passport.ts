@@ -1,6 +1,5 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
 import User from '../models/user.model.js';
 import dotenv from 'dotenv';
 
@@ -33,13 +32,7 @@ passport.use(new GoogleStrategy(
       } else if (!user.googleId) {
         // Link Google account to existing user
         user.googleId = profile.id;
-        if (user.provider && !user.provider.split(',').includes('google')) {
-          const providers = user.provider.split(',');
-          providers.push('google');
-          user.provider = Array.from(new Set(providers)).sort().join(',') as typeof user.provider;
-        } else {
-          user.provider = 'google';
-        }
+        user.provider = 'google';
         await user.save();
       }
 
@@ -49,51 +42,6 @@ passport.use(new GoogleStrategy(
     }
   }
 )); 
-
-// LinkedIn Strategy
-passport.use(new LinkedInStrategy(
-  {
-    clientID: process.env.LINKEDIN_CLIENT_ID!,
-    clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
-    callbackURL: "/auth/linkedin/callback",
-    scope: ['r_emailaddress', 'r_liteprofile'],
-  },
-  async (_, __, profile, done) => {
-    try {
-      let user = await User.findOne({ 
-        $or: [
-          { linkedinId: profile.id },
-          { email: profile.emails?.[0].value }
-        ]
-      });
-
-      if (!user) {
-        user = await User.create({
-          linkedinId: profile.id,
-          email: profile.emails?.[0].value,
-          name: profile.displayName,
-          avatar: profile.photos?.[0].value,
-          provider: 'linkedin'
-        });
-      } else if (!user.linkedinId) {
-        // Link LinkedIn account to existing user
-        user.linkedinId = profile.id;
-        if (user.provider && !user.provider.split(',').includes('linkedin')) {  
-          const providers = user.provider.split(',');
-          providers.push('linkedin');
-          user.provider = Array.from(new Set(providers)).sort().join(',') as typeof user.provider;
-        } else {
-          user.provider = 'linkedin';
-        }
-        await user.save();
-      }
-
-      return done(null, user);
-    } catch (error) {
-      return done(error, null);
-    }
-  }
-));
 
 // Serialize user for session
 passport.serializeUser((user: any, done) => {
