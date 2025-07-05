@@ -90,7 +90,6 @@ const careerSchema = new mongoose.Schema({
 });
 
 // Index for better performance
-careerSchema.index({ userId: 1 });
 careerSchema.index({ generatedAt: -1 });
 
 export default mongoose.model('Career', careerSchema);
