@@ -6,7 +6,8 @@ import {
   getProfile,
   updateProfile,
   uploadAvatar,
-  deleteProfile
+  deleteProfile,
+  checkProfileStatus
 } from '../controllers/profile.controller.js';
 
 const router = express.Router();
@@ -45,6 +46,7 @@ router.use(authenticate);
 
 // Profile routes
 router.get('/', getProfile);
+router.get('/status', checkProfileStatus);
 router.put('/', updateProfile);
 router.post('/avatar', upload.single('avatar'), uploadAvatar);
 router.delete('/', deleteProfile);

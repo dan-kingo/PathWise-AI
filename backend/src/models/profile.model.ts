@@ -38,11 +38,27 @@ const profileSchema = new mongoose.Schema({
   isComplete: {
     type: Boolean,
     default: false
+  },
+  savedCareerPath: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  careerPathGeneratedAt: Date,
+  learningProgress: {
+    currentWeek: {
+      type: Number,
+      default: 0
+    },
+    completedMilestones: [String],
+    completedResources: [String],
+    startedAt: Date,
+    lastActivityAt: Date
   }
 }, { 
   timestamps: true 
 });
 
 // Create index for better performance
+profileSchema.index({ userId: 1 });
 
 export default mongoose.model("Profile", profileSchema);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema, ProfileFormData } from '../../schemas/profileSchema';
@@ -21,7 +21,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
   const [interestInput, setInterestInput] = useState('');
   
   const { user } = useAuthStore();
-  const { setProfile, updateProfile } = useProfileStore();
+  const { profile, updateProfile } = useProfileStore();
 
   const {
     control,
@@ -60,6 +60,22 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
     },
   });
 
+  // Pre-fill form with existing profile data
+  useEffect(() => {
+    if (profile) {
+      setValue('name', user?.name || '');
+      setValue('email', user?.email || '');
+      setValue('bio', profile.bio || '');
+      setValue('phone', profile.phone || '');
+      setValue('location', profile.location || '');
+      setValue('education', profile.education || {});
+      setValue('careerGoals', profile.careerGoals || {});
+      setValue('skills', profile.skills || []);
+      setValue('interests', profile.interests || []);
+      setValue('experience', profile.experience || { level: 'entry' });
+    }
+  }, [profile, user, setValue]);
+
   const watchedSkills = watch('skills') || [];
   const watchedInterests = watch('interests') || [];
 
@@ -87,9 +103,8 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
 
   const onSubmit = async (data: ProfileFormData) => {
     try {
-      // Here you would typically save to backend
-      setProfile(data);
-      toast.success('Profile setup completed successfully!');
+      await updateProfile(data);
+      toast.success('Profile updated successfully!');
       onComplete();
     } catch (error) {
       toast.error('Failed to save profile. Please try again.');
@@ -112,16 +127,16 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 sm:py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
           <p className="text-gray-600">Help us personalize your learning journey</p>
         </div>
 
         {/* Progress Steps */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
+        <div className="flex justify-center mb-6 sm:mb-8 overflow-x-auto">
+          <div className="flex items-center space-x-2 sm:space-x-4 min-w-max px-4">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.number;
@@ -129,22 +144,22 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
               
               return (
                 <div key={step.number} className="flex items-center">
-                  <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-colors ${
+                  <div className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 transition-colors ${
                     isActive 
                       ? 'bg-blue-600 border-blue-600 text-white' 
                       : isCompleted 
                         ? 'bg-green-600 border-green-600 text-white'
                         : 'bg-white border-gray-300 text-gray-400'
                   }`}>
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <span className={`ml-2 text-sm font-medium ${
+                  <span className={`ml-2 text-xs sm:text-sm font-medium ${
                     isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
                   }`}>
                     {step.title}
                   </span>
                   {index < steps.length - 1 && (
-                    <div className={`w-8 h-0.5 mx-4 ${
+                    <div className={`w-6 sm:w-8 h-0.5 mx-2 sm:mx-4 ${
                       isCompleted ? 'bg-green-600' : 'bg-gray-300'
                     }`} />
                   )}
@@ -349,10 +364,10 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
                         label="Timeframe"
                         options={[
                           { value: '', label: 'Select timeframe' },
-                          { value: '3-months', label: '3 months' },
-                          { value: '6-months', label: '6 months' },
-                          { value: '1-year', label: '1 year' },
-                          { value: '2-years', label: '2+ years' },
+                          { value: '3 months', label: '3 months' },
+                          { value: '6 months', label: '6 months' },
+                          { value: '1 year', label: '1 year' },
+                          { value: '2 years', label: '2+ years' },
                         ]}
                       />
                     )}
@@ -504,22 +519,31 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between pt-6 border-t border-gray-200 gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={prevStep}
                 disabled={currentStep === 1}
+                className="order-2 sm:order-1"
               >
                 Previous
               </Button>
 
               {currentStep < 4 ? (
-                <Button type="button" onClick={nextStep}>
+                <Button 
+                  type="button" 
+                  onClick={nextStep}
+                  className="order-1 sm:order-2"
+                >
                   Next
                 </Button>
               ) : (
-                <Button type="submit" loading={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  loading={isSubmitting}
+                  className="order-1 sm:order-2"
+                >
                   Complete Profile
                 </Button>
               )}

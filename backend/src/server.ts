@@ -11,6 +11,7 @@ import "./configs/passport.js";
 import connectDB from "./configs/db.js";
 import authRoutes from "./routes/auth.route.js";
 import profileRoutes from "./routes/profile.route.js";
+import careerRoutes from "./routes/career.route.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 dotenv.config();
@@ -73,6 +74,7 @@ app.use(passport.session());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
+app.use('/career', careerRoutes);
 
 // Health check
 app.get("/", (_req: Request, res: Response) => {
@@ -94,9 +96,17 @@ app.get("/", (_req: Request, res: Response) => {
       },
       profile: {
         get: "GET /profile",
+        status: "GET /profile/status",
         update: "PUT /profile",
         uploadAvatar: "POST /profile/avatar",
         delete: "DELETE /profile"
+      },
+      career: {
+        generatePath: "POST /career/generate-path",
+        getResources: "GET /career/resources",
+        analyzeSkills: "POST /career/analyze-skills",
+        savePath: "POST /career/save-path",
+        getSavedPath: "GET /career/saved-path"
       }
     }
   });

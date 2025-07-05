@@ -178,6 +178,24 @@ export const api = {
     return response.json();
   },
 
+  checkProfileStatus: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/profile/status`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to check profile status');
+    }
+
+    return response.json();
+  },
+
   updateProfile: async (profileData: any) => {
     const token = localStorage.getItem('auth_token');
     if (!token) throw new Error('No token found');
@@ -222,6 +240,113 @@ export const api = {
     }
 
     return data;
+  },
+
+  // Career API methods
+  generateCareerPath: async (data: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/generate-path`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to generate career path');
+    }
+
+    return result;
+  },
+
+  getResourceRecommendations: async (skill: string, level: string = 'beginner') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/resources?skill=${encodeURIComponent(skill)}&level=${level}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to get resource recommendations');
+    }
+
+    return result;
+  },
+
+  analyzeSkillGap: async (targetRole: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/analyze-skills`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ targetRole }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to analyze skill gap');
+    }
+
+    return result;
+  },
+
+  saveCareerPath: async (careerPath: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/save-path`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ careerPath }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to save career path');
+    }
+
+    return result;
+  },
+
+  getSavedCareerPath: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/saved-path`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok && response.status !== 404) {
+      throw new Error(result.message || 'Failed to get saved career path');
+    }
+
+    return result;
   },
 
   // Logout user

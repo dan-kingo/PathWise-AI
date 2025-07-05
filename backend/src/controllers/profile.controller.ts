@@ -112,3 +112,21 @@ export const deleteProfile = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const checkProfileStatus = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    
+    const profile = await Profile.findOne({ userId });
+    
+    return res.json({
+      success: true,
+      hasProfile: !!profile,
+      isComplete: profile?.isComplete || false,
+      profile: profile || null
+    });
+  } catch (error) {
+    console.error('Check profile status error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};

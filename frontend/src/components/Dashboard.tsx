@@ -3,31 +3,53 @@ import { useAuthStore } from '../stores/authStore';
 import { useProfileStore } from '../stores/profileStore';
 import LoadingSpinner from './LoadingSpinner';
 import ProfileSetup from './profile/ProfileSetup';
-import CareerPathPlanner from './career/CareerPathPlanner';
+import AICareerPathPlanner from './career/AICareerPathPlanner';
 import Button from './ui/Button';
-import { User, Target, BookOpen, Settings, LogOut } from 'lucide-react';
+import { User, Target, BookOpen, Settings, LogOut, Sparkles } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user, logout, loading } = useAuthStore();
-  const { profile, isProfileComplete, checkProfileCompleteness } = useProfileStore();
+  const { profile, isProfileComplete, checkProfileStatus, fetchProfile } = useProfileStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'career' | 'settings'>('overview');
   const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
-    checkProfileCompleteness();
-    
-    // Show profile setup if profile is not complete
-    if (!isProfileComplete && !showProfileSetup) {
-      setShowProfileSetup(true);
-    }
-  }, [isProfileComplete, checkProfileCompleteness, showProfileSetup]);
+    const initializeDashboard = async () => {
+      try {
+        setProfileLoading(true);
+        
+        // Check profile status from backend
+        const status = await checkProfileStatus();
+        
+        if (!status.hasProfile || !status.isComplete) {
+          setShowProfileSetup(true);
+        } else {
+          // Fetch full profile data
+          await fetchProfile();
+        }
+      } catch (error) {
+        console.error('Failed to initialize dashboard:', error);
+        // If there's an error, show profile setup to be safe
+        setShowProfileSetup(true);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
 
-  const handleProfileSetupComplete = () => {
+    if (user) {
+      initializeDashboard();
+    }
+  }, [user, checkProfileStatus, fetchProfile]);
+
+  const handleProfileSetupComplete = async () => {
     setShowProfileSetup(false);
     setActiveTab('overview');
+    // Refresh profile data
+    await fetchProfile();
   };
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <LoadingSpinner size="lg" />
@@ -45,7 +67,7 @@ const Dashboard: React.FC = () => {
 
   const navigation = [
     { id: 'overview', name: 'Overview', icon: User },
-    { id: 'career', name: 'Career Paths', icon: Target },
+    { id: 'career', name: 'AI Career Planner', icon: Sparkles },
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'settings', name: 'Settings', icon: Settings },
   ];
@@ -64,7 +86,7 @@ const Dashboard: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
+              <div className="hidden md:flex items-center space-x-1">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -84,13 +106,28 @@ const Dashboard: React.FC = () => {
                 })}
               </div>
               
+              {/* Mobile Navigation */}
+              <div className="md:hidden">
+                <select
+                  value={activeTab}
+                  onChange={(e) => setActiveTab(e.target.value as any)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  {navigation.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={logout}
                 icon={<LogOut className="w-4 h-4" />}
               >
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
           </div>
@@ -98,11 +135,11 @@ const Dashboard: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
         {activeTab === 'overview' && (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Welcome back, {user.name}!
               </h1>
               <p className="text-gray-600">Ready to advance your career?</p>
@@ -111,7 +148,7 @@ const Dashboard: React.FC = () => {
             {/* Profile Completion Alert */}
             {!isProfileComplete && (
               <div className="card bg-yellow-50 border-yellow-200">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="font-semibold text-yellow-800">Complete Your Profile</h3>
                     <p className="text-yellow-700">
@@ -126,7 +163,7 @@ const Dashboard: React.FC = () => {
             )}
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="card">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -143,24 +180,26 @@ const Dashboard: React.FC = () => {
 
               <div className="card">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Target className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-purple-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Career Paths</p>
-                    <p className="text-lg font-semibold text-gray-900">3 Available</p>
+                    <p className="text-sm font-medium text-gray-600">AI Career Planner</p>
+                    <p className="text-lg font-semibold text-gray-900">Ready</p>
                   </div>
                 </div>
               </div>
 
-              <div className="card">
+              <div className="card sm:col-span-2 lg:col-span-1">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-6 h-6 text-purple-600" />
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Target className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Learning Progress</p>
-                    <p className="text-lg font-semibold text-gray-900">0% Complete</p>
+                    <p className="text-sm font-medium text-gray-600">Target Role</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {profile?.careerGoals?.targetRole || 'Not set'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -169,16 +208,16 @@ const Dashboard: React.FC = () => {
             {/* Quick Actions */}
             <div className="card">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button
                   variant="outline"
                   className="justify-start h-auto p-4"
                   onClick={() => setActiveTab('career')}
                 >
-                  <Target className="w-5 h-5 mr-3" />
+                  <Sparkles className="w-5 h-5 mr-3 text-purple-600" />
                   <div className="text-left">
-                    <div className="font-medium">Explore Career Paths</div>
-                    <div className="text-sm text-gray-500">Find your ideal career roadmap</div>
+                    <div className="font-medium">Generate AI Career Path</div>
+                    <div className="text-sm text-gray-500">Get personalized learning roadmap</div>
                   </div>
                 </Button>
 
@@ -198,17 +237,17 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'career' && <CareerPathPlanner />}
+        {activeTab === 'career' && <AICareerPathPlanner />}
 
         {activeTab === 'profile' && (
           <div className="space-y-6">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Profile</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Your Profile</h1>
               <p className="text-gray-600">Manage your personal information and preferences</p>
             </div>
 
             <div className="card">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                 <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
                 <Button onClick={() => setShowProfileSetup(true)}>
                   Edit Profile
@@ -217,14 +256,14 @@ const Dashboard: React.FC = () => {
 
               {profile ? (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                      <p className="text-gray-900">{profile.name}</p>
+                      <p className="text-gray-900">{user.name}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <p className="text-gray-900">{profile.email}</p>
+                      <p className="text-gray-900">{user.email}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
@@ -232,7 +271,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Target Role</label>
-                      <p className="text-gray-900">{profile.careerGoals.targetRole || 'Not specified'}</p>
+                      <p className="text-gray-900">{profile.careerGoals?.targetRole || 'Not specified'}</p>
                     </div>
                   </div>
 
@@ -246,7 +285,7 @@ const Dashboard: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
                     <div className="flex flex-wrap gap-2">
-                      {profile.skills.map((skill) => (
+                      {profile.skills?.map((skill) => (
                         <span key={skill} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                           {skill}
                         </span>
@@ -284,7 +323,7 @@ const Dashboard: React.FC = () => {
         {activeTab === 'settings' && (
           <div className="space-y-6">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Settings</h1>
               <p className="text-gray-600">Manage your account preferences</p>
             </div>
 
