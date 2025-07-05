@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useAuthStore } from './stores/authStore';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import AuthCallback from './components/AuthCallback';
@@ -8,10 +8,11 @@ import VerifyEmail from './components/VerifyEmail';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import LoadingSpinner from './components/LoadingSpinner';
+import Toast from './components/ui/Toast';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuthStore();
 
   if (loading) {
     return (
@@ -26,7 +27,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Public Route Component (redirect to dashboard if authenticated)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuthStore();
 
   if (loading) {
     return (
@@ -91,14 +92,21 @@ const AppRoutes: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const { checkAuthStatus } = useAuthStore();
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
   return (
-    <AuthProvider>
+    <>
+      <Toast />
       <Router>
         <div className="App">
           <AppRoutes />
         </div>
       </Router>
-    </AuthProvider>
+    </>
   );
 };
 

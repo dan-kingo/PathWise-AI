@@ -5,15 +5,28 @@ import passport from "passport";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import path from "path";
+import { fileURLToPath } from 'url';
 import "./configs/passport.js";
 import connectDB from "./configs/db.js";
 import authRoutes from "./routes/auth.route.js";
+import profileRoutes from "./routes/profile.route.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Create uploads directory if it doesn't exist
+import fs from 'fs';
+const uploadsDir = path.join(__dirname, '../uploads/avatars');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // Security middleware
 app.use(helmet());
@@ -37,6 +50,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static files for uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Session configuration
 app.use(
   session({
@@ -56,11 +72,12 @@ app.use(passport.session());
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/profile', profileRoutes);
 
 // Health check
 app.get("/", (_req: Request, res: Response) => {
   res.json({ 
-    message: "Authentication API is running successfully!",
+    message: "Job Ready AI Coach API is running successfully!",
     timestamp: new Date().toISOString(),
     version: "1.0.0",
     endpoints: {
@@ -74,6 +91,12 @@ app.get("/", (_req: Request, res: Response) => {
         forgotPassword: "POST /auth/forgot-password",
         resetPassword: "POST /auth/reset-password",
         changePassword: "POST /auth/change-password"
+      },
+      profile: {
+        get: "GET /profile",
+        update: "PUT /profile",
+        uploadAvatar: "POST /profile/avatar",
+        delete: "DELETE /profile"
       }
     }
   });
