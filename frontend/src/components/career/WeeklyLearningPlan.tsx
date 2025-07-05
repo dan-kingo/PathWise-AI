@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '../../stores/profileStore';
+import { api } from '../../services/api';
 import Button from '../ui/Button';
 import LoadingSpinner from '../LoadingSpinner';
 import { 
@@ -25,8 +26,11 @@ interface WeeklyPlan {
   week: number;
   title: string;
   description: string;
-  skills: string[];
-  resources: {
+  focus?: string;
+  goals?: string[];
+  tasks?: string[];
+  skills?: string[];
+  resources?: {
     title: string;
     type: 'video' | 'article' | 'course' | 'practice' | 'project';
     url: string;
@@ -34,17 +38,21 @@ interface WeeklyPlan {
     description: string;
     source: string;
   }[];
-  milestones: string[];
-  projects: string[];
+  milestones?: string[];
+  projects?: string[];
+  project?: string;
+  hours?: number;
 }
 
 interface CareerPath {
+  _id?: string;
   title: string;
   description: string;
   duration: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   totalWeeks: number;
   weeklyPlan: WeeklyPlan[];
+  generatedAt?: string;
 }
 
 const WeeklyLearningPlan: React.FC = () => {
@@ -58,18 +66,26 @@ const WeeklyLearningPlan: React.FC = () => {
 
   useEffect(() => {
     loadCareerPath();
-  }, [profile]);
+  }, []);
 
   const loadCareerPath = async () => {
     try {
       setLoading(true);
       
-      // Get saved career path from profile
-      if (profile?.savedCareerPath) {
-        setCareerPath(profile.savedCareerPath);
+      // Try to get career path from new Career model first
+      let response;
+      try {
+        response = await api.getCareerPath();
+      } catch (error) {
+        // Fallback to legacy saved career path
+        response = await api.getSavedCareerPath();
+      }
+
+      if (response.success && response.careerPath) {
+        setCareerPath(response.careerPath);
         
         // Load progress from profile if available
-        if (profile.learningProgress) {
+        if (profile?.learningProgress) {
           setCurrentWeek(profile.learningProgress.currentWeek || 1);
           setCompletedResources(new Set(profile.learningProgress.completedResources || []));
           setCompletedMilestones(new Set(profile.learningProgress.completedMilestones || []));
@@ -132,10 +148,14 @@ const WeeklyLearningPlan: React.FC = () => {
   };
 
   const openResource = (url: string) => {
-    if (url.startsWith('http')) {
+    if (url && url.startsWith('http')) {
       window.open(url, '_blank');
-    } else if (url.startsWith('Search:')) {
+    } else if (url && url.startsWith('Search:')) {
       const searchTerm = url.replace('Search:', '').trim();
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`, '_blank');
+    } else {
+      // If no URL, search for the resource title
+      const searchTerm = url || 'learning resource';
       window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`, '_blank');
     }
   };
@@ -152,13 +172,16 @@ const WeeklyLearningPlan: React.FC = () => {
   };
 
   const getWeekProgress = (week: WeeklyPlan) => {
-    if (!week || !week.resources || !week.milestones) return 0;
+    if (!week) return 0;
     
-    const totalItems = (week.resources?.length || 0) + (week.milestones?.length || 0);
+    const resources = week.resources || [];
+    const milestones = week.milestones || [];
+    const totalItems = resources.length + milestones.length;
+    
     if (totalItems === 0) return 0;
     
-    const completedResourcesCount = (week.resources || []).filter(r => completedResources.has(r.title)).length;
-    const completedMilestonesCount = (week.milestones || []).filter(m => completedMilestones.has(m)).length;
+    const completedResourcesCount = resources.filter(r => completedResources.has(r.title)).length;
+    const completedMilestonesCount = milestones.filter(m => completedMilestones.has(m)).length;
     const completedItems = completedResourcesCount + completedMilestonesCount;
     
     return Math.round((completedItems / totalItems) * 100);
@@ -291,6 +314,9 @@ const WeeklyLearningPlan: React.FC = () => {
                 <div>
                   <h2 className="text-3xl font-bold mb-2">Week {currentWeekData.week}: {currentWeekData.title}</h2>
                   <p className="text-blue-100 text-lg">{currentWeekData.description}</p>
+                  {currentWeekData.focus && (
+                    <p className="text-blue-200 text-sm mt-2">Focus: {currentWeekData.focus}</p>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-blue-100 text-sm">Week Progress</div>
@@ -329,6 +355,42 @@ const WeeklyLearningPlan: React.FC = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Goals Section */}
+            {currentWeekData.goals && currentWeekData.goals.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <Target className="w-6 h-6 mr-3 text-green-600" />
+                  Week Goals
+                </h3>
+                <ul className="space-y-3">
+                  {currentWeekData.goals.map((goal, index) => (
+                    <li key={index} className="flex items-start">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                      <span className="text-gray-700">{goal}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Tasks Section */}
+            {currentWeekData.tasks && currentWeekData.tasks.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <CheckCircle className="w-6 h-6 mr-3 text-blue-600" />
+                  Tasks to Complete
+                </h3>
+                <div className="space-y-4">
+                  {currentWeekData.tasks.map((task, index) => (
+                    <div key={index} className="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-4 mt-1 flex-shrink-0"></div>
+                      <span className="text-gray-700">{task}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Learning Resources */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
@@ -450,7 +512,7 @@ const WeeklyLearningPlan: React.FC = () => {
             </div>
 
             {/* Projects */}
-            {currentWeekData.projects && currentWeekData.projects.length > 0 && (
+            {((currentWeekData.projects && currentWeekData.projects.length > 0) || currentWeekData.project) && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                   <Star className="w-6 h-6 mr-3 text-orange-600" />
@@ -458,7 +520,7 @@ const WeeklyLearningPlan: React.FC = () => {
                 </h3>
                 
                 <div className="space-y-4">
-                  {currentWeekData.projects.map((project, index) => (
+                  {currentWeekData.projects && currentWeekData.projects.map((project, index) => (
                     <div key={index} className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                       <div className="w-3 h-3 bg-orange-500 rounded-full mr-4"></div>
                       <span className="flex-1 text-gray-900">{project}</span>
@@ -467,6 +529,16 @@ const WeeklyLearningPlan: React.FC = () => {
                       </Button>
                     </div>
                   ))}
+                  
+                  {currentWeekData.project && (
+                    <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full mr-4"></div>
+                      <span className="flex-1 text-gray-900">{currentWeekData.project}</span>
+                      <Button size="sm" variant="outline">
+                        Start Project
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -478,7 +550,7 @@ const WeeklyLearningPlan: React.FC = () => {
                 Week Summary
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
                     {(currentWeekData.resources || []).filter(r => completedResources.has(r.title)).length}
@@ -500,6 +572,14 @@ const WeeklyLearningPlan: React.FC = () => {
                   <div className="text-sm text-gray-600">Week Progress</div>
                   <div className="text-xs text-gray-500">Overall completion</div>
                 </div>
+
+                {currentWeekData.hours && (
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">{currentWeekData.hours}h</div>
+                    <div className="text-sm text-gray-600">Estimated Time</div>
+                    <div className="text-xs text-gray-500">This week</div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

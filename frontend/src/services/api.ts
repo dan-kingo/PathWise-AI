@@ -264,7 +264,7 @@ export const api = {
     return data;
   },
 
-  // Career API methods
+  // Career API methods - New Career model endpoints
   generateCareerPath: async (data: any) => {
     const token = localStorage.getItem('auth_token');
     if (!token) throw new Error('No token found');
@@ -282,6 +282,69 @@ export const api = {
     
     if (!response.ok) {
       throw new Error(result.message || 'Failed to generate career path');
+    }
+
+    return result;
+  },
+
+  getCareerPath: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/path`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok && response.status !== 404) {
+      throw new Error(result.message || 'Failed to get career path');
+    }
+
+    return result;
+  },
+
+  updateCareerPath: async (data: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/path`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to update career path');
+    }
+
+    return result;
+  },
+
+  deleteCareerPath: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/career/path`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to delete career path');
     }
 
     return result;
@@ -329,6 +392,7 @@ export const api = {
     return result;
   },
 
+  // Legacy methods for backward compatibility
   saveCareerPath: async (careerPath: any) => {
     const token = localStorage.getItem('auth_token');
     if (!token) throw new Error('No token found');
