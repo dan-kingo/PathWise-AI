@@ -91,6 +91,7 @@ const AICareerPathPlanner: React.FC = () => {
       }
     } catch (error) {
       // No saved path found, which is fine
+      console.log('No saved career path found');
     }
   };
 
@@ -437,7 +438,7 @@ const AICareerPathPlanner: React.FC = () => {
 
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                <div className="text-sm font-medium text-gray-900">{generatedPath.marketDemand.split(' ')[0]}</div>
+                <div className="text-sm font-medium text-gray-900">{generatedPath.marketDemand?.split(' ')[0] || 'High'}</div>
                 <div className="text-xs text-gray-500">Market Demand</div>
               </div>
 
@@ -460,7 +461,7 @@ const AICareerPathPlanner: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Prerequisites</h4>
                 <ul className="space-y-2">
-                  {generatedPath.prerequisites.map((prereq, index) => (
+                  {(generatedPath.prerequisites || []).map((prereq, index) => (
                     <li key={index} className="text-sm text-gray-600 flex items-start">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                       {prereq}
@@ -472,7 +473,7 @@ const AICareerPathPlanner: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Learning Outcomes</h4>
                 <ul className="space-y-2">
-                  {generatedPath.outcomes.map((outcome, index) => (
+                  {(generatedPath.outcomes || []).map((outcome, index) => (
                     <li key={index} className="text-sm text-gray-600 flex items-start">
                       <Target className="w-4 h-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
                       {outcome}
@@ -484,7 +485,7 @@ const AICareerPathPlanner: React.FC = () => {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Skills You'll Learn</h4>
                 <div className="flex flex-wrap gap-2">
-                  {generatedPath.skillsToLearn.map((skill, index) => (
+                  {(generatedPath.skillsToLearn || []).map((skill, index) => (
                     <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                       {skill}
                     </span>
@@ -497,7 +498,7 @@ const AICareerPathPlanner: React.FC = () => {
             <div>
               <h4 className="font-semibold text-gray-900 mb-3">Related Job Titles</h4>
               <div className="flex flex-wrap gap-2">
-                {generatedPath.jobTitles.map((title, index) => (
+                {(generatedPath.jobTitles || []).map((title, index) => (
                   <span key={index} className="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-lg">
                     {title}
                   </span>
@@ -511,7 +512,7 @@ const AICareerPathPlanner: React.FC = () => {
             <h3 className="text-xl font-semibold text-gray-900 mb-6">Weekly Learning Plan</h3>
             
             <div className="space-y-4">
-              {generatedPath.weeklyPlan.map((week) => (
+              {(generatedPath.weeklyPlan || []).map((week) => (
                 <div key={week.week} className="border border-gray-200 rounded-lg overflow-hidden">
                   <button
                     onClick={() => toggleWeekExpansion(week.week)}
@@ -536,7 +537,7 @@ const AICareerPathPlanner: React.FC = () => {
                       <div className="mb-4">
                         <h5 className="font-medium text-gray-900 mb-2">Skills Focus</h5>
                         <div className="flex flex-wrap gap-2">
-                          {week.skills.map((skill, index) => (
+                          {(week.skills || []).map((skill, index) => (
                             <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
                               {skill}
                             </span>
@@ -548,7 +549,7 @@ const AICareerPathPlanner: React.FC = () => {
                       <div className="mb-4">
                         <h5 className="font-medium text-gray-900 mb-3">Learning Resources</h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {week.resources.map((resource, index) => (
+                          {(week.resources || []).map((resource, index) => (
                             <div key={index} className="p-3 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                               <div className="flex items-start justify-between mb-2">
                                 <div className="flex items-center">
@@ -575,7 +576,7 @@ const AICareerPathPlanner: React.FC = () => {
                       <div className="mb-4">
                         <h5 className="font-medium text-gray-900 mb-2">Week Milestones</h5>
                         <ul className="space-y-1">
-                          {week.milestones.map((milestone, index) => (
+                          {(week.milestones || []).map((milestone, index) => (
                             <li key={index} className="text-sm text-gray-600 flex items-center">
                               <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                               {milestone}
@@ -585,7 +586,7 @@ const AICareerPathPlanner: React.FC = () => {
                       </div>
 
                       {/* Projects */}
-                      {week.projects.length > 0 && (
+                      {week.projects && week.projects.length > 0 && (
                         <div>
                           <h5 className="font-medium text-gray-900 mb-2">Practice Projects</h5>
                           <ul className="space-y-1">

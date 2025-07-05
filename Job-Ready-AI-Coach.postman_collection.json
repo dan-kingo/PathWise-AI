@@ -387,6 +387,633 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Profile",
+      "description": "User profile management endpoints",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile"]
+            },
+            "description": "Get the current user's profile information"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/profile",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"profile\": {\n    \"_id\": \"64f1234567890abcdef12345\",\n    \"userId\": \"64f1234567890abcdef12345\",\n    \"bio\": \"Passionate developer looking to advance my career\",\n    \"phone\": \"+1234567890\",\n    \"location\": \"San Francisco, CA\",\n    \"education\": {\n      \"degree\": \"Bachelor's\",\n      \"institution\": \"University of California\",\n      \"graduationYear\": 2020,\n      \"fieldOfStudy\": \"Computer Science\"\n    },\n    \"careerGoals\": {\n      \"targetRole\": \"Senior Frontend Developer\",\n      \"industry\": \"Technology\",\n      \"timeframe\": \"6 months\",\n      \"description\": \"I want to become a senior frontend developer specializing in React\"\n    },\n    \"skills\": [\"JavaScript\", \"React\", \"CSS\", \"HTML\"],\n    \"interests\": [\"Web Development\", \"UI/UX Design\", \"Open Source\"],\n    \"experience\": {\n      \"level\": \"junior\",\n      \"years\": 2,\n      \"currentRole\": \"Frontend Developer\",\n      \"currentCompany\": \"Tech Startup\"\n    },\n    \"isComplete\": true,\n    \"createdAt\": \"2023-09-01T10:00:00.000Z\",\n    \"updatedAt\": \"2023-09-01T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Check Profile Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profile/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile", "status"]
+            },
+            "description": "Check if user has a profile and if it's complete"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/profile/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["profile", "status"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"hasProfile\": true,\n  \"isComplete\": true,\n  \"profile\": {\n    \"_id\": \"64f1234567890abcdef12345\",\n    \"userId\": \"64f1234567890abcdef12345\",\n    \"isComplete\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User Name\",\n  \"bio\": \"Updated bio describing my career goals and interests\",\n  \"phone\": \"+1234567890\",\n  \"location\": \"San Francisco, CA\",\n  \"education\": {\n    \"degree\": \"Bachelor's\",\n    \"institution\": \"University of California\",\n    \"graduationYear\": 2020,\n    \"fieldOfStudy\": \"Computer Science\"\n  },\n  \"careerGoals\": {\n    \"targetRole\": \"Senior Frontend Developer\",\n    \"industry\": \"Technology\",\n    \"timeframe\": \"6 months\",\n    \"description\": \"I want to become a senior frontend developer specializing in React\"\n  },\n  \"skills\": [\"JavaScript\", \"React\", \"TypeScript\", \"CSS\", \"HTML\"],\n  \"interests\": [\"Web Development\", \"UI/UX Design\", \"Open Source\"],\n  \"experience\": {\n    \"level\": \"junior\",\n    \"years\": 2,\n    \"currentRole\": \"Frontend Developer\",\n    \"currentCompany\": \"Tech Startup\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile"]
+            },
+            "description": "Update user profile information"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated User Name\",\n  \"bio\": \"Updated bio\",\n  \"skills\": [\"JavaScript\", \"React\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/profile",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Profile updated successfully\",\n  \"profile\": {\n    \"_id\": \"64f1234567890abcdef12345\",\n    \"userId\": \"64f1234567890abcdef12345\",\n    \"bio\": \"Updated bio\",\n    \"skills\": [\"JavaScript\", \"React\"],\n    \"isComplete\": true,\n    \"updatedAt\": \"2023-09-01T10:30:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "/path/to/avatar/image.jpg",
+                  "description": "Avatar image file (JPG, PNG, GIF - max 5MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/profile/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile", "avatar"]
+            },
+            "description": "Upload user avatar image"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "avatar",
+                      "type": "file",
+                      "src": "/path/to/avatar/image.jpg"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/profile/avatar",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["profile", "avatar"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Avatar uploaded successfully\",\n  \"avatarUrl\": \"/uploads/avatars/avatar-1693564800000-123456789.jpg\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Profile",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile"]
+            },
+            "description": "Delete user profile (keeps user account but removes profile data)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/profile",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Profile deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Career",
+      "description": "AI-powered career planning and guidance endpoints",
+      "item": [
+        {
+          "name": "Generate Career Path",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetRole\": \"Frontend Developer\",\n  \"timeframe\": \"8 weeks\",\n  \"customSkills\": [\"JavaScript\", \"HTML\", \"CSS\"],\n  \"customInterests\": [\"Web Development\", \"UI/UX Design\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/career/generate-path",
+              "host": ["{{baseUrl}}"],
+              "path": ["career", "generate-path"]
+            },
+            "description": "Generate an AI-powered career learning path based on target role and current skills"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"targetRole\": \"Frontend Developer\",\n  \"timeframe\": \"8 weeks\",\n  \"customSkills\": [\"JavaScript\", \"HTML\", \"CSS\"],\n  \"customInterests\": [\"Web Development\", \"UI/UX Design\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/career/generate-path",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["career", "generate-path"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"careerPath\": {\n    \"title\": \"Frontend Developer Career Path\",\n    \"description\": \"A comprehensive 8-week program to become a proficient frontend developer\",\n    \"duration\": \"8 weeks\",\n    \"difficulty\": \"Intermediate\",\n    \"totalWeeks\": 8,\n    \"prerequisites\": [\"Basic HTML/CSS knowledge\", \"JavaScript fundamentals\"],\n    \"outcomes\": [\"Build responsive web applications\", \"Master React framework\", \"Deploy production apps\"],\n    \"skillsToLearn\": [\"React\", \"TypeScript\", \"State Management\", \"Testing\"],\n    \"marketDemand\": \"High demand with 15% growth expected\",\n    \"averageSalary\": \"$75,000 - $120,000\",\n    \"jobTitles\": [\"Frontend Developer\", \"React Developer\", \"UI Developer\"],\n    \"weeklyPlan\": [\n      {\n        \"week\": 1,\n        \"title\": \"React Fundamentals\",\n        \"description\": \"Learn the basics of React components and JSX\",\n        \"skills\": [\"React\", \"JSX\", \"Components\"],\n        \"resources\": [\n          {\n            \"title\": \"React Official Tutorial\",\n            \"type\": \"course\",\n            \"url\": \"https://react.dev/tutorial\",\n            \"duration\": \"4 hours\",\n            \"description\": \"Official React tutorial covering fundamentals\",\n            \"source\": \"React.dev\"\n          }\n        ],\n        \"milestones\": [\"Create your first React component\", \"Understand JSX syntax\"],\n        \"projects\": [\"Build a simple todo app\"]\n      }\n    ]\n  },\n  \"message\": \"Career path generated successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Resource Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/career/resources?skill=React&level=beginner",
+              "host": ["{{baseUrl}}"],
+              "path": ["career", "resources"],
+              "query": [
+                {
+                  "key": "skill",
+                  "value": "React",
+                  "description": "The skill to get resources for"
+                },
+                {
+                  "key": "level",
+                  "value": "beginner",
+                  "description": "Skill level: beginner, intermediate, advanced"
+                }
+              ]
+            },
+            "description": "Get AI-curated learning resources for a specific skill"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/career/resources?skill=React&level=beginner",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["career", "resources"],
+                  "query": [
+                    {
+                      "key": "skill",
+                      "value": "React"
+                    },
+                    {
+                      "key": "level",
+                      "value": "beginner"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"resources\": [\n    {\n      \"title\": \"React Official Tutorial\",\n      \"type\": \"course\",\n      \"url\": \"https://react.dev/tutorial\",\n      \"duration\": \"4 hours\",\n      \"description\": \"Official React tutorial covering fundamentals\",\n      \"source\": \"React.dev\",\n      \"difficulty\": \"Beginner\",\n      \"rating\": \"4.8/5\"\n    },\n    {\n      \"title\": \"React for Beginners\",\n      \"type\": \"video\",\n      \"url\": \"https://youtube.com/watch?v=example\",\n      \"duration\": \"2 hours\",\n      \"description\": \"Comprehensive video series for React beginners\",\n      \"source\": \"YouTube\",\n      \"difficulty\": \"Beginner\",\n      \"rating\": \"4.6/5\"\n    }\n  ],\n  \"message\": \"Resources generated successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Analyze Skill Gap",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetRole\": \"Senior Frontend Developer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/career/analyze-skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["career", "analyze-skills"]
+            },
+            "description": "Analyze the gap between current skills and target role requirements"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"targetRole\": \"Senior Frontend Developer\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/career/analyze-skills",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["career", "analyze-skills"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"analysis\": {\n    \"missingSkills\": [\"TypeScript\", \"Testing (Jest/RTL)\", \"State Management (Redux)\"],\n    \"skillsToImprove\": [\"Advanced React Patterns\", \"Performance Optimization\"],\n    \"strongSkills\": [\"JavaScript\", \"HTML/CSS\", \"React Basics\"],\n    \"learningPriority\": [\n      {\n        \"skill\": \"TypeScript\",\n        \"priority\": \"High\",\n        \"reason\": \"Essential for senior roles and code maintainability\",\n        \"timeToLearn\": \"3-4 weeks\"\n      },\n      {\n        \"skill\": \"Testing\",\n        \"priority\": \"High\",\n        \"reason\": \"Critical for senior developers to ensure code quality\",\n        \"timeToLearn\": \"2-3 weeks\"\n      }\n    ],\n    \"recommendations\": \"Focus on TypeScript and testing first, as these are fundamental skills for senior frontend roles. Your React foundation is solid, so building on that with advanced patterns will be your next step.\"\n  },\n  \"message\": \"Skill gap analysis completed\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Save Career Path",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"careerPath\": {\n    \"title\": \"Frontend Developer Career Path\",\n    \"description\": \"A comprehensive 8-week program to become a proficient frontend developer\",\n    \"duration\": \"8 weeks\",\n    \"difficulty\": \"Intermediate\",\n    \"totalWeeks\": 8,\n    \"prerequisites\": [\"Basic HTML/CSS knowledge\"],\n    \"outcomes\": [\"Build responsive web applications\"],\n    \"skillsToLearn\": [\"React\", \"TypeScript\"],\n    \"marketDemand\": \"High\",\n    \"averageSalary\": \"$75,000 - $120,000\",\n    \"jobTitles\": [\"Frontend Developer\"],\n    \"weeklyPlan\": []\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/career/save-path",
+              "host": ["{{baseUrl}}"],
+              "path": ["career", "save-path"]
+            },
+            "description": "Save a generated career path to user's profile"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"careerPath\": {\n    \"title\": \"Frontend Developer Career Path\",\n    \"description\": \"A comprehensive program\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/career/save-path",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["career", "save-path"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Career path saved successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Saved Career Path",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/career/saved-path",
+              "host": ["{{baseUrl}}"],
+              "path": ["career", "saved-path"]
+            },
+            "description": "Retrieve user's saved career path"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/career/saved-path",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["career", "saved-path"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"careerPath\": {\n    \"title\": \"Frontend Developer Career Path\",\n    \"description\": \"A comprehensive 8-week program to become a proficient frontend developer\",\n    \"duration\": \"8 weeks\",\n    \"difficulty\": \"Intermediate\",\n    \"totalWeeks\": 8,\n    \"weeklyPlan\": []\n  },\n  \"generatedAt\": \"2023-09-01T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "No Saved Path",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/career/saved-path",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["career", "saved-path"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"No saved career path found\"\n}"
+            }
+          ]
+        }
+      ]
     }
   ],
   "event": [

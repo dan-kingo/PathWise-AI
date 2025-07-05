@@ -49,6 +49,11 @@ export const useCareerStore = create<CareerState>((set, get) => ({
   generateRecommendations: (userProfile) => {
     const { availablePaths } = get();
     
+    if (!userProfile || !availablePaths.length) {
+      set({ recommendedPaths: [] });
+      return;
+    }
+    
     // Simple recommendation algorithm based on user profile
     const recommended = availablePaths.filter(path => {
       const targetRole = userProfile?.careerGoals?.targetRole?.toLowerCase() || '';
@@ -61,13 +66,13 @@ export const useCareerStore = create<CareerState>((set, get) => ({
       
       // Check skill overlap
       const skillOverlap = path.skills.some(skill => 
-        userSkills.some(userSkill => 
+        userSkills.some((userSkill: string) => 
           userSkill.toLowerCase().includes(skill.toLowerCase())
         )
       );
       
       // Check interest overlap
-      const interestOverlap = userInterests.some(interest =>
+      const interestOverlap = userInterests.some((interest: string) =>
         path.title.toLowerCase().includes(interest.toLowerCase()) ||
         path.description.toLowerCase().includes(interest.toLowerCase())
       );
