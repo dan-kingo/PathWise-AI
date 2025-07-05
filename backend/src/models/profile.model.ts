@@ -54,11 +54,10 @@ const profileSchema = new mongoose.Schema({
     startedAt: Date,
     lastActivityAt: Date
   }
-}, { 
+}, {  
   timestamps: true 
 });
 
 // Create index for better performance
-profileSchema.index({ userId: 1 });
 
 export default mongoose.model("Profile", profileSchema);

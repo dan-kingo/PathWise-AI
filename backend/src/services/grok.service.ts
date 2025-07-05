@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+import ModelClient, { isUnexpected } from "@azure-rest/ai-inference";
+import { AzureKeyCredential } from "@azure/core-auth";
 
 dotenv.config();
 
@@ -6,7 +8,7 @@ interface GrokResponse {
   choices: {
     message: {
       content: string;
-    };
+    }; 
   }[];
 }
 
@@ -51,55 +53,47 @@ interface CareerPath {
 }
 
 class GrokService {
-  private apiKey: string;
-  private apiUrl: string;
+  private client: ReturnType<typeof ModelClient>;
+  private modelName: string = "xai/grok-3";
 
   constructor() {
-    this.apiKey = process.env.GROK_API_KEY || '';
-    this.apiUrl = process.env.GROK_API_URL || 'https://api.x.ai/v1';
+    const token = process.env.GITHUB_TOKEN;
+    const endpoint = "https://models.github.ai/inference";
+
+    if (!token) throw new Error("Missing GITHUB_TOKEN in environment");
+
+    this.client = ModelClient(endpoint, new AzureKeyCredential(token));
   }
 
   private async makeGrokRequest(prompt: string): Promise<string> {
-    try {
-      const response = await fetch(`${this.apiUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'grok-beta',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 4000,
-          temperature: 0.7,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Grok API error: ${response.statusText}`);
+    const response = await this.client.path("/chat/completions").post({
+      body: {
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          }
+        ],
+        temperature: 0.7,
+        top_p: 1,
+        model: this.modelName,
       }
+    });
 
-      const data: GrokResponse = await response.json();
-      return data.choices[0]?.message?.content || '';
-    } catch (error) {
-      console.error('Grok API request failed:', error);
-      throw new Error('Failed to generate career path with AI');
+    if (isUnexpected(response)) {
+      console.error("Grok model API error:", response.body.error);
+      throw new Error("Model response failed");
     }
+
+    return response.body.choices[0]?.message?.content || '';
   }
 
   async generateCareerPath(request: CareerPathRequest): Promise<CareerPath> {
-    const prompt = `
-Create a comprehensive career learning path for someone who wants to become a ${request.targetRole}.
-
+    const prompt = `Create a comprehensive career learning path for someone who wants to become a ${request.targetRole}.
 Current context:
 - Target Role: ${request.targetRole}
 - Current Skills: ${request.currentSkills.join(', ')}
@@ -109,152 +103,88 @@ Current context:
 
 Please provide a detailed response in the following JSON format:
 {
-  "title": "Career path title",
-  "description": "Brief description of the career path",
-  "duration": "Total duration (e.g., '8 weeks', '3 months')",
+  "title": "...",
+  "description": "...",
+  "duration": "...",
   "difficulty": "Beginner|Intermediate|Advanced",
   "totalWeeks": number,
-  "prerequisites": ["prerequisite1", "prerequisite2"],
-  "outcomes": ["outcome1", "outcome2"],
-  "skillsToLearn": ["skill1", "skill2"],
-  "marketDemand": "High|Medium|Low with brief explanation",
-  "averageSalary": "Salary range",
-  "jobTitles": ["related job title 1", "related job title 2"],
-  "weeklyPlan": [
-    {
-      "week": 1,
-      "title": "Week title",
-      "description": "What will be covered this week",
-      "skills": ["skill1", "skill2"],
-      "resources": [
-        {
-          "title": "Resource title",
-          "type": "video|article|course|practice|project",
-          "url": "https://example.com or 'Search: keyword'",
-          "duration": "estimated time",
-          "description": "What this resource covers",
-          "source": "YouTube|Coursera|FreeCodeCamp|MDN|etc"
-        }
-      ],
-      "milestones": ["milestone1", "milestone2"],
-      "projects": ["project1", "project2"]
-    }
-  ]
-}
-
-Focus on:
-1. Real, accessible resources (YouTube tutorials, free courses, documentation)
-2. Practical projects and hands-on learning
-3. Progressive skill building
-4. Industry-relevant tools and technologies
-5. Portfolio-building opportunities
-
-Make sure the path is realistic for the given timeframe and experience level.
-`;
+  "prerequisites": ["..."],
+  "outcomes": ["..."],
+  "skillsToLearn": ["..."],
+  "marketDemand": "...",
+  "averageSalary": "...",
+  "jobTitles": ["..."],
+  "weeklyPlan": [ { ... } ]
+}`;
 
     try {
       const response = await this.makeGrokRequest(prompt);
-      
-      // Parse the JSON response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('Invalid response format from AI');
-      }
+      if (!jsonMatch) throw new Error("Invalid JSON format from response");
 
       const careerPath: CareerPath = JSON.parse(jsonMatch[0]);
-      
-      // Validate the response structure
-      if (!careerPath.title || !careerPath.weeklyPlan || !Array.isArray(careerPath.weeklyPlan)) {
-        throw new Error('Invalid career path structure');
+      if (!careerPath?.title || !Array.isArray(careerPath.weeklyPlan)) {
+        throw new Error("Invalid structure in career path");
       }
 
       return careerPath;
-    } catch (error) {
-      console.error('Failed to parse AI response:', error);
-      throw new Error('Failed to generate valid career path');
+    } catch (err) {
+      console.error("Career path generation failed:", err);
+      throw err;
     }
   }
 
   async generateResourceRecommendations(skill: string, level: string): Promise<any[]> {
-    const prompt = `
-Find the best learning resources for "${skill}" at ${level} level.
-
-Provide a JSON array of resources in this format:
+    const prompt = `Find the best learning resources for "${skill}" at ${level} level.
+Return a JSON array of up to 8 items. Format:
 [
   {
-    "title": "Resource title",
-    "type": "video|article|course|practice|documentation",
-    "url": "actual URL or 'Search: specific search term'",
-    "duration": "estimated time",
-    "description": "What this resource covers",
-    "source": "Platform name",
-    "difficulty": "Beginner|Intermediate|Advanced",
-    "rating": "estimated rating out of 5"
+    "title": "...",
+    "type": "...",
+    "url": "...",
+    "duration": "...",
+    "description": "...",
+    "source": "...",
+    "difficulty": "...",
+    "rating": "..."
   }
-]
-
-Focus on free, high-quality resources from platforms like:
-- YouTube (specific channels and videos)
-- FreeCodeCamp
-- MDN Web Docs
-- Coursera (free courses)
-- edX
-- Khan Academy
-- Official documentation
-- GitHub repositories with tutorials
-
-Limit to 5-8 best resources.
-`;
+]`;
 
     try {
       const response = await this.makeGrokRequest(prompt);
       const jsonMatch = response.match(/\[[\s\S]*\]/);
-      
-      if (!jsonMatch) {
-        return [];
-      }
-
-      return JSON.parse(jsonMatch[0]);
-    } catch (error) {
-      console.error('Failed to generate resource recommendations:', error);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    } catch (err) {
+      console.error("Resource recommendation failed:", err);
       return [];
     }
   }
 
   async analyzeSkillGap(currentSkills: string[], targetRole: string): Promise<any> {
-    const prompt = `
-Analyze the skill gap for someone with skills: ${currentSkills.join(', ')} 
-who wants to become a ${targetRole}.
-
-Provide analysis in JSON format:
+    const prompt = `Analyze the skill gap for someone with skills: ${currentSkills.join(', ')} who wants to become a ${targetRole}.
+Respond in JSON:
 {
-  "missingSkills": ["skill1", "skill2"],
-  "skillsToImprove": ["skill1", "skill2"],
-  "strongSkills": ["skill1", "skill2"],
+  "missingSkills": [...],
+  "skillsToImprove": [...],
+  "strongSkills": [...],
   "learningPriority": [
     {
-      "skill": "skill name",
+      "skill": "...",
       "priority": "High|Medium|Low",
-      "reason": "why this skill is important",
-      "timeToLearn": "estimated time"
+      "reason": "...",
+      "timeToLearn": "..."
     }
   ],
-  "recommendations": "Overall recommendations"
-}
-`;
+  "recommendations": "..."
+}`;
 
     try {
       const response = await this.makeGrokRequest(prompt);
       const jsonMatch = response.match(/\{[\s\S]*\}/);
-      
-      if (!jsonMatch) {
-        throw new Error('Invalid response format');
-      }
-
-      return JSON.parse(jsonMatch[0]);
-    } catch (error) {
-      console.error('Failed to analyze skill gap:', error);
-      throw new Error('Failed to analyze skills');
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+    } catch (err) {
+      console.error("Skill gap analysis failed:", err);
+      throw err;
     }
   }
 }
