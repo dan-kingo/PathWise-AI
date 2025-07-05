@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authSchema, AuthFormData } from '../schemas/profileSchema';
 import { useAuthStore } from '../stores/authStore';
 import Input from './ui/Input';
@@ -12,10 +12,19 @@ import toast from 'react-hot-toast';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, loading } = useAuthStore();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Check for error in URL params
+  React.useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      toast.error(decodeURIComponent(error));
+    }
+  }, [searchParams]);
 
   const {
     register,
@@ -44,18 +53,23 @@ const LoginPage: React.FC = () => {
           name: data.name
         });
         toast.success('Account created successfully! Please check your email to verify your account.');
+        // Switch to login mode after successful signup
+        setIsSignUp(false);
+        reset({ email: data.email, password: '', name: '', confirmPassword: '' });
       } else {
         await login('email-login', {
           email: data.email,
           password: data.password
         });
         toast.success('Welcome back!');
+        navigate('/dashboard');
       }
     } catch (error: any) {
+      console.error('Login error:', error);
       if (error.needsVerification) {
         toast.error('Please verify your email before logging in. Check your inbox for the verification link.');
       } else {
-        toast.error(error.message || 'An error occurred');
+        toast.error(error.message || 'An error occurred during authentication');
       }
     }
   };
@@ -161,6 +175,7 @@ const LoginPage: React.FC = () => {
               type="submit"
               className="w-full"
               loading={isSubmitting}
+              disabled={isSubmitting}
             >
               {isSignUp ? 'Create Account' : 'Sign In'}
             </Button>

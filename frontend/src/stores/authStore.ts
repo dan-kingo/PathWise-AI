@@ -73,6 +73,7 @@ export const useAuthStore = create<AuthState>()(
           if (provider === 'email-signup') {
             response = await api.signup(data.email, data.password, data.name);
             if (response.success) {
+              // Don't set user for signup, just return success
               return;
             }
           } else if (provider === 'email-login') {
@@ -85,6 +86,11 @@ export const useAuthStore = create<AuthState>()(
           }
           
           throw new Error(response?.message || 'Authentication failed');
+        } catch (error: any) {
+          // Re-throw the error with additional properties if they exist
+          const authError = new Error(error.message || 'Authentication failed');
+          (authError as any).needsVerification = error.needsVerification;
+          throw authError;
         } finally {
           set({ loading: false });
         }
@@ -97,6 +103,8 @@ export const useAuthStore = create<AuthState>()(
           set({ user: null, isAuthenticated: false });
         } catch (error) {
           console.error('Logout failed:', error);
+          // Even if logout fails on server, clear local state
+          set({ user: null, isAuthenticated: false });
         } finally {
           set({ loading: false });
         }
