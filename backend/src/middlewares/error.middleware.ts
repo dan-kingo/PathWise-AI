@@ -5,7 +5,7 @@ export interface AppError extends Error {
   isOperational?: boolean;
 }
 
-export const errorHandler = (err: AppError, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: AppError, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err);
 
   // Default error
@@ -42,7 +42,7 @@ export const errorHandler = (err: AppError, req: Request, res: Response, next: N
   });
 };
 
-export const notFound = (req: Request, res: Response, next: NextFunction) => {
+export const notFound = (req: Request, _res: Response, next: NextFunction) => {
   const error = new Error(`Route not found - ${req.originalUrl}`) as AppError;
   error.statusCode = 404;
   next(error);

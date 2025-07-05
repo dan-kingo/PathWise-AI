@@ -31,6 +31,7 @@ export const validateSignup = (req: Request, res: Response, next: NextFunction) 
   }
 
   next();
+  return;
 };
 
 export const validateLogin = (req: Request, res: Response, next: NextFunction) => {
@@ -55,6 +56,7 @@ export const validateLogin = (req: Request, res: Response, next: NextFunction) =
   }
 
   next();
+  return
 };
 
 export const validatePasswordReset = (req: Request, res: Response, next: NextFunction) => {
@@ -79,4 +81,5 @@ export const validatePasswordReset = (req: Request, res: Response, next: NextFun
   }
 
   next();
+  return
 };

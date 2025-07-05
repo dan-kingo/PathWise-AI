@@ -42,8 +42,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Create indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ googleId: 1 });
 userSchema.index({ emailVerificationToken: 1 });
 userSchema.index({ passwordResetToken: 1 });
 
