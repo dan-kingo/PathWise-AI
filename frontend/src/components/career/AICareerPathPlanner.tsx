@@ -6,7 +6,6 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import LoadingSpinner from '../LoadingSpinner';
-import SkillGapAnalysis from './SkillGapAnalysis';
 import { 
   Sparkles, 
   Target, 
@@ -75,7 +74,6 @@ const AICareerPathPlanner: React.FC = () => {
   const [generatedPath, setGeneratedPath] = useState<CareerPath | null>(null);
   const [savedPath, setSavedPath] = useState<CareerPath | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
-  const [showSkillGap, setShowSkillGap] = useState(false);
   const [isPathSaved, setIsPathSaved] = useState(false);
 
   useEffect(() => {
@@ -338,25 +336,8 @@ const AICareerPathPlanner: React.FC = () => {
           >
             {isGenerating ? 'Generating Path...' : 'Generate AI Career Path'}
           </Button>
-          
-          <Button
-            onClick={() => setShowSkillGap(true)}
-            variant="outline"
-            className="py-4"
-            icon={<TrendingUp className="w-5 h-5" />}
-          >
-            Analyze Skill Gap
-          </Button>
         </div>
       </div>
-
-      {/* Skill Gap Analysis */}
-      {showSkillGap && (
-        <SkillGapAnalysis 
-          targetRole={targetRole}
-          onClose={() => setShowSkillGap(false)}
-        />
-      )}
 
       {/* Generated Career Path */}
       {generatedPath && (

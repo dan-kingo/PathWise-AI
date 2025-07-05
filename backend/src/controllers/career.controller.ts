@@ -172,7 +172,7 @@ export const getResourceRecommendations = async (req: Request, res: Response) =>
       resources,
       message: 'Resources generated successfully'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get resource recommendations error:', error);
     return res.status(500).json({ 
       message: 'Failed to get resource recommendations',
@@ -181,33 +181,12 @@ export const getResourceRecommendations = async (req: Request, res: Response) =>
   }
 };
 
+// Skill gap analysis removed as requested
 export const analyzeSkillGap = async (req: Request, res: Response) => {
-  try {
-    const userId = (req.user as any).id;
-    const { targetRole } = req.body;
-
-    if (!targetRole) {
-      return res.status(400).json({ message: 'Target role is required' });
-    }
-
-    // Get user profile
-    const profile = await Profile.findOne({ userId });
-    const currentSkills = profile?.skills || [];
-
-    const analysis = await GrokService.analyzeSkillGap(currentSkills, targetRole);
-
-    return res.json({
-      success: true,
-      analysis,
-      message: 'Skill gap analysis completed'
-    });
-  } catch (error) {
-    console.error('Analyze skill gap error:', error);
-    return res.status(500).json({ 
-      message: 'Failed to analyze skill gap',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+  return res.status(501).json({ 
+    message: 'Skill gap analysis is not implemented yet. This feature will be available soon.',
+    success: false
+  });
 };
 
 // Legacy support - keeping for backward compatibility
