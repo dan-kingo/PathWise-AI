@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '../../stores/profileStore';
 import Button from '../ui/Button';
 import LoadingSpinner from '../LoadingSpinner';
@@ -49,7 +49,7 @@ interface CareerPath {
 
 const WeeklyLearningPlan: React.FC = () => {
   const navigate = useNavigate();
-  const { profile } = useProfileStore();
+  const { profile, updateLearningProgress } = useProfileStore();
   const [careerPath, setCareerPath] = useState<CareerPath | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [completedResources, setCompletedResources] = useState<Set<string>>(new Set());
@@ -58,7 +58,7 @@ const WeeklyLearningPlan: React.FC = () => {
 
   useEffect(() => {
     loadCareerPath();
-  }, []);
+  }, [profile]);
 
   const loadCareerPath = async () => {
     try {
@@ -89,21 +89,15 @@ const WeeklyLearningPlan: React.FC = () => {
 
   const saveProgress = async () => {
     try {
-      // Update profile with current progress
-      const updatedProfile = {
-        ...profile,
-        learningProgress: {
-          currentWeek,
-          completedResources: Array.from(completedResources),
-          completedMilestones: Array.from(completedMilestones),
-          startedAt: profile?.learningProgress?.startedAt || new Date().toISOString(),
-          lastActivityAt: new Date().toISOString()
-        }
+      const progressData = {
+        currentWeek,
+        completedResources: Array.from(completedResources),
+        completedMilestones: Array.from(completedMilestones),
+        startedAt: profile?.learningProgress?.startedAt || new Date().toISOString(),
+        lastActivityAt: new Date().toISOString()
       };
 
-      // Save to backend (you'll need to implement this in your profile store)
-      // await updateProfile(updatedProfile);
-      
+      await updateLearningProgress(progressData);
       toast.success('Progress saved!');
     } catch (error) {
       console.error('Failed to save progress:', error);
@@ -111,7 +105,7 @@ const WeeklyLearningPlan: React.FC = () => {
     }
   };
 
-  const toggleResourceCompletion = (resourceTitle: string) => {
+  const toggleResourceCompletion = async (resourceTitle: string) => {
     const newCompleted = new Set(completedResources);
     if (newCompleted.has(resourceTitle)) {
       newCompleted.delete(resourceTitle);
@@ -119,9 +113,12 @@ const WeeklyLearningPlan: React.FC = () => {
       newCompleted.add(resourceTitle);
     }
     setCompletedResources(newCompleted);
+    
+    // Auto-save progress
+    setTimeout(saveProgress, 500);
   };
 
-  const toggleMilestoneCompletion = (milestone: string) => {
+  const toggleMilestoneCompletion = async (milestone: string) => {
     const newCompleted = new Set(completedMilestones);
     if (newCompleted.has(milestone)) {
       newCompleted.delete(milestone);
@@ -129,6 +126,9 @@ const WeeklyLearningPlan: React.FC = () => {
       newCompleted.add(milestone);
     }
     setCompletedMilestones(newCompleted);
+    
+    // Auto-save progress
+    setTimeout(saveProgress, 500);
   };
 
   const openResource = (url: string) => {
@@ -152,14 +152,20 @@ const WeeklyLearningPlan: React.FC = () => {
   };
 
   const getWeekProgress = (week: WeeklyPlan) => {
-    const totalItems = week.resources.length + week.milestones.length;
-    const completedItems = week.resources.filter(r => completedResources.has(r.title)).length +
-                          week.milestones.filter(m => completedMilestones.has(m)).length;
-    return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+    if (!week || !week.resources || !week.milestones) return 0;
+    
+    const totalItems = (week.resources?.length || 0) + (week.milestones?.length || 0);
+    if (totalItems === 0) return 0;
+    
+    const completedResourcesCount = (week.resources || []).filter(r => completedResources.has(r.title)).length;
+    const completedMilestonesCount = (week.milestones || []).filter(m => completedMilestones.has(m)).length;
+    const completedItems = completedResourcesCount + completedMilestonesCount;
+    
+    return Math.round((completedItems / totalItems) * 100);
   };
 
   const getOverallProgress = () => {
-    if (!careerPath?.weeklyPlan) return 0;
+    if (!careerPath?.weeklyPlan || careerPath.weeklyPlan.length === 0) return 0;
     
     const totalWeeks = careerPath.weeklyPlan.length;
     const completedWeeks = careerPath.weeklyPlan.filter(week => getWeekProgress(week) === 100).length;
@@ -240,7 +246,7 @@ const WeeklyLearningPlan: React.FC = () => {
               </h3>
               
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {careerPath.weeklyPlan.map((week) => {
+                {(careerPath.weeklyPlan || []).map((week) => {
                   const progress = getWeekProgress(week);
                   const isActive = week.week === currentWeek;
                   
@@ -305,7 +311,7 @@ const WeeklyLearningPlan: React.FC = () => {
                 </Button>
                 
                 <div className="flex items-center space-x-2">
-                  {currentWeekData.skills.map((skill, index) => (
+                  {(currentWeekData.skills || []).map((skill, index) => (
                     <span key={index} className="px-3 py-1 bg-white/20 text-white rounded-full text-sm">
                       {skill}
                     </span>
@@ -331,65 +337,72 @@ const WeeklyLearningPlan: React.FC = () => {
                 Learning Resources
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {currentWeekData.resources.map((resource, index) => {
-                  const isCompleted = completedResources.has(resource.title);
-                  
-                  return (
-                    <div key={index} className={`border rounded-xl p-6 transition-all hover:shadow-md ${
-                      isCompleted ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:border-blue-300'
-                    }`}>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center">
-                          <span className="text-2xl mr-3">{getResourceIcon(resource.type)}</span>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{resource.title}</h4>
-                            <p className="text-sm text-gray-500">{resource.source} • {resource.duration}</p>
+              {currentWeekData.resources && currentWeekData.resources.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {currentWeekData.resources.map((resource, index) => {
+                    const isCompleted = completedResources.has(resource.title);
+                    
+                    return (
+                      <div key={index} className={`border rounded-xl p-6 transition-all hover:shadow-md ${
+                        isCompleted ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:border-blue-300'
+                      }`}>
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center">
+                            <span className="text-2xl mr-3">{getResourceIcon(resource.type)}</span>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{resource.title}</h4>
+                              <p className="text-sm text-gray-500">{resource.source} • {resource.duration}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => openResource(resource.url)}
+                              className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => toggleResourceCompletion(resource.title)}
+                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                isCompleted
+                                  ? 'bg-green-500 border-green-500'
+                                  : 'border-gray-300 hover:border-green-400'
+                              }`}
+                            >
+                              {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <button
+                        <p className="text-gray-600 text-sm mb-4">{resource.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                            resource.type === 'video' ? 'bg-red-100 text-red-800' :
+                            resource.type === 'course' ? 'bg-blue-100 text-blue-800' :
+                            resource.type === 'article' ? 'bg-green-100 text-green-800' :
+                            resource.type === 'practice' ? 'bg-purple-100 text-purple-800' :
+                            'bg-orange-100 text-orange-800'
+                          }`}>
+                            {resource.type}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => openResource(resource.url)}
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                            icon={<Play className="w-3 h-3" />}
                           >
-                            <ExternalLink className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => toggleResourceCompletion(resource.title)}
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              isCompleted
-                                ? 'bg-green-500 border-green-500'
-                                : 'border-gray-300 hover:border-green-400'
-                            }`}
-                          >
-                            {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
-                          </button>
+                            Start
+                          </Button>
                         </div>
                       </div>
-                      <p className="text-gray-600 text-sm mb-4">{resource.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
-                          resource.type === 'video' ? 'bg-red-100 text-red-800' :
-                          resource.type === 'course' ? 'bg-blue-100 text-blue-800' :
-                          resource.type === 'article' ? 'bg-green-100 text-green-800' :
-                          resource.type === 'practice' ? 'bg-purple-100 text-purple-800' :
-                          'bg-orange-100 text-orange-800'
-                        }`}>
-                          {resource.type}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openResource(resource.url)}
-                          icon={<Play className="w-3 h-3" />}
-                        >
-                          Start
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No resources available for this week</p>
+                </div>
+              )}
             </div>
 
             {/* Milestones */}
@@ -399,34 +412,41 @@ const WeeklyLearningPlan: React.FC = () => {
                 Week Milestones
               </h3>
               
-              <div className="space-y-4">
-                {currentWeekData.milestones.map((milestone, index) => {
-                  const isCompleted = completedMilestones.has(milestone);
-                  
-                  return (
-                    <div key={index} className={`flex items-center p-4 rounded-lg border transition-colors ${
-                      isCompleted ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:bg-gray-50'
-                    }`}>
-                      <button
-                        onClick={() => toggleMilestoneCompletion(milestone)}
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 transition-colors ${
-                          isCompleted
-                            ? 'bg-green-500 border-green-500'
-                            : 'border-gray-300 hover:border-green-400'
-                        }`}
-                      >
-                        {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
-                      </button>
-                      <span className={`flex-1 ${isCompleted ? 'text-green-800 line-through' : 'text-gray-900'}`}>
-                        {milestone}
-                      </span>
-                      {isCompleted && (
-                        <Award className="w-5 h-5 text-green-600" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {currentWeekData.milestones && currentWeekData.milestones.length > 0 ? (
+                <div className="space-y-4">
+                  {currentWeekData.milestones.map((milestone, index) => {
+                    const isCompleted = completedMilestones.has(milestone);
+                    
+                    return (
+                      <div key={index} className={`flex items-center p-4 rounded-lg border transition-colors ${
+                        isCompleted ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:bg-gray-50'
+                      }`}>
+                        <button
+                          onClick={() => toggleMilestoneCompletion(milestone)}
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 transition-colors ${
+                            isCompleted
+                              ? 'bg-green-500 border-green-500'
+                              : 'border-gray-300 hover:border-green-400'
+                          }`}
+                        >
+                          {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
+                        </button>
+                        <span className={`flex-1 ${isCompleted ? 'text-green-800 line-through' : 'text-gray-900'}`}>
+                          {milestone}
+                        </span>
+                        {isCompleted && (
+                          <Award className="w-5 h-5 text-green-600" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No milestones defined for this week</p>
+                </div>
+              )}
             </div>
 
             {/* Projects */}
@@ -461,18 +481,18 @@ const WeeklyLearningPlan: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
-                    {currentWeekData.resources.filter(r => completedResources.has(r.title)).length}
+                    {(currentWeekData.resources || []).filter(r => completedResources.has(r.title)).length}
                   </div>
                   <div className="text-sm text-gray-600">Resources Completed</div>
-                  <div className="text-xs text-gray-500">of {currentWeekData.resources.length}</div>
+                  <div className="text-xs text-gray-500">of {(currentWeekData.resources || []).length}</div>
                 </div>
                 
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {currentWeekData.milestones.filter(m => completedMilestones.has(m)).length}
+                    {(currentWeekData.milestones || []).filter(m => completedMilestones.has(m)).length}
                   </div>
                   <div className="text-sm text-gray-600">Milestones Achieved</div>
-                  <div className="text-xs text-gray-500">of {currentWeekData.milestones.length}</div>
+                  <div className="text-xs text-gray-500">of {(currentWeekData.milestones || []).length}</div>
                 </div>
                 
                 <div className="text-center">

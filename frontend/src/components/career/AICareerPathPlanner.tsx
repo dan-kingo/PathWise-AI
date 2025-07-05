@@ -491,12 +491,12 @@ const AICareerPathPlanner: React.FC = () => {
             </div>
           </div>
 
-          {/* Weekly Plan */}
+          {/* Weekly Plan Preview */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center">
                 <Calendar className="w-6 h-6 mr-3 text-blue-600" />
-                <h3 className="text-2xl font-semibold text-gray-900">Weekly Learning Plan</h3>
+                <h3 className="text-2xl font-semibold text-gray-900">Weekly Learning Plan Preview</h3>
               </div>
               <Button
                 onClick={startLearningPlan}
@@ -506,13 +506,10 @@ const AICareerPathPlanner: React.FC = () => {
               </Button>
             </div>
             
-            <div className="space-y-6">
-              {(generatedPath.weeklyPlan || []).map((week) => (
-                <div key={week.week} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                  <button
-                    onClick={() => toggleWeekExpansion(week.week)}
-                    className="w-full p-6 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 transition-colors text-left flex items-center justify-between"
-                  >
+            <div className="space-y-4">
+              {(generatedPath.weeklyPlan || []).slice(0, 3).map((week) => (
+                <div key={week.week} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-4">
                         {week.week}
@@ -524,97 +521,46 @@ const AICareerPathPlanner: React.FC = () => {
                         <p className="text-gray-600 mt-1">{week.description}</p>
                       </div>
                     </div>
-                    {expandedWeeks.has(week.week) ? (
-                      <ChevronUp className="w-6 h-6 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-6 h-6 text-gray-400" />
-                    )}
-                  </button>
+                  </div>
 
-                  {expandedWeeks.has(week.week) && (
-                    <div className="p-6 border-t border-gray-200 bg-white">
-                      {/* Skills for this week */}
-                      <div className="mb-6">
-                        <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
-                          <Star className="w-4 h-4 mr-2 text-purple-600" />
-                          Skills Focus
-                        </h5>
-                        <div className="flex flex-wrap gap-2">
-                          {(week.skills || []).map((skill, index) => (
-                            <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full font-medium">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <h5 className="font-medium text-gray-900 mb-2">Skills Focus</h5>
+                      <div className="flex flex-wrap gap-1">
+                        {(week.skills || []).slice(0, 3).map((skill, index) => (
+                          <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                            {skill}
+                          </span>
+                        ))}
                       </div>
-
-                      {/* Resources */}
-                      <div className="mb-6">
-                        <h5 className="font-semibold text-gray-900 mb-4 flex items-center">
-                          <BookOpen className="w-4 h-4 mr-2 text-blue-600" />
-                          Learning Resources
-                        </h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {(week.resources || []).map((resource, index) => (
-                            <div key={index} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all hover:border-blue-300 group">
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center">
-                                  <span className="text-2xl mr-3">{getResourceIcon(resource.type)}</span>
-                                  <div>
-                                    <h6 className="font-semibold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">{resource.title}</h6>
-                                    <p className="text-xs text-gray-500">{resource.source} • {resource.duration}</p>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => openResource(resource.url)}
-                                  className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                </button>
-                              </div>
-                              <p className="text-sm text-gray-600">{resource.description}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Milestones */}
-                      <div className="mb-6">
-                        <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
-                          <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                          Week Milestones
-                        </h5>
-                        <ul className="space-y-2">
-                          {(week.milestones || []).map((milestone, index) => (
-                            <li key={index} className="text-sm text-gray-600 flex items-center">
-                              <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                              {milestone}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {/* Projects */}
-                      {week.projects && week.projects.length > 0 && (
-                        <div>
-                          <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
-                            <Play className="w-4 h-4 mr-2 text-orange-600" />
-                            Practice Projects
-                          </h5>
-                          <ul className="space-y-2">
-                            {week.projects.map((project, index) => (
-                              <li key={index} className="text-sm text-gray-600 flex items-center">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
-                                {project}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
-                  )}
+
+                    <div>
+                      <h5 className="font-medium text-gray-900 mb-2">Resources</h5>
+                      <p className="text-sm text-gray-600">{(week.resources || []).length} learning resources</p>
+                    </div>
+
+                    <div>
+                      <h5 className="font-medium text-gray-900 mb-2">Milestones</h5>
+                      <p className="text-sm text-gray-600">{(week.milestones || []).length} milestones to achieve</p>
+                    </div>
+                  </div>
                 </div>
               ))}
+              
+              {(generatedPath.weeklyPlan || []).length > 3 && (
+                <div className="text-center py-4">
+                  <p className="text-gray-600 mb-4">
+                    And {(generatedPath.weeklyPlan || []).length - 3} more weeks of structured learning...
+                  </p>
+                  <Button
+                    onClick={startLearningPlan}
+                    icon={<ArrowRight className="w-5 h-5" />}
+                  >
+                    View Complete Learning Plan
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
