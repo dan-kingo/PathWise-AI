@@ -1,0 +1,492 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useProfileStore } from '../../stores/profileStore';
+import Button from '../ui/Button';
+import LoadingSpinner from '../LoadingSpinner';
+import { 
+  Calendar, 
+  CheckCircle, 
+  Clock, 
+  BookOpen, 
+  Play, 
+  Target, 
+  ArrowLeft,
+  ArrowRight,
+  Star,
+  ExternalLink,
+  Award,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+
+interface WeeklyPlan {
+  week: number;
+  title: string;
+  description: string;
+  skills: string[];
+  resources: {
+    title: string;
+    type: 'video' | 'article' | 'course' | 'practice' | 'project';
+    url: string;
+    duration: string;
+    description: string;
+    source: string;
+  }[];
+  milestones: string[];
+  projects: string[];
+}
+
+interface CareerPath {
+  title: string;
+  description: string;
+  duration: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  totalWeeks: number;
+  weeklyPlan: WeeklyPlan[];
+}
+
+const WeeklyLearningPlan: React.FC = () => {
+  const navigate = useNavigate();
+  const { profile } = useProfileStore();
+  const [careerPath, setCareerPath] = useState<CareerPath | null>(null);
+  const [currentWeek, setCurrentWeek] = useState(1);
+  const [completedResources, setCompletedResources] = useState<Set<string>>(new Set());
+  const [completedMilestones, setCompletedMilestones] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCareerPath();
+  }, []);
+
+  const loadCareerPath = async () => {
+    try {
+      setLoading(true);
+      
+      // Get saved career path from profile
+      if (profile?.savedCareerPath) {
+        setCareerPath(profile.savedCareerPath);
+        
+        // Load progress from profile if available
+        if (profile.learningProgress) {
+          setCurrentWeek(profile.learningProgress.currentWeek || 1);
+          setCompletedResources(new Set(profile.learningProgress.completedResources || []));
+          setCompletedMilestones(new Set(profile.learningProgress.completedMilestones || []));
+        }
+      } else {
+        toast.error('No career path found. Please generate one first.');
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Failed to load career path:', error);
+      toast.error('Failed to load career path');
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProgress = async () => {
+    try {
+      // Update profile with current progress
+      const updatedProfile = {
+        ...profile,
+        learningProgress: {
+          currentWeek,
+          completedResources: Array.from(completedResources),
+          completedMilestones: Array.from(completedMilestones),
+          startedAt: profile?.learningProgress?.startedAt || new Date().toISOString(),
+          lastActivityAt: new Date().toISOString()
+        }
+      };
+
+      // Save to backend (you'll need to implement this in your profile store)
+      // await updateProfile(updatedProfile);
+      
+      toast.success('Progress saved!');
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+      toast.error('Failed to save progress');
+    }
+  };
+
+  const toggleResourceCompletion = (resourceTitle: string) => {
+    const newCompleted = new Set(completedResources);
+    if (newCompleted.has(resourceTitle)) {
+      newCompleted.delete(resourceTitle);
+    } else {
+      newCompleted.add(resourceTitle);
+    }
+    setCompletedResources(newCompleted);
+  };
+
+  const toggleMilestoneCompletion = (milestone: string) => {
+    const newCompleted = new Set(completedMilestones);
+    if (newCompleted.has(milestone)) {
+      newCompleted.delete(milestone);
+    } else {
+      newCompleted.add(milestone);
+    }
+    setCompletedMilestones(newCompleted);
+  };
+
+  const openResource = (url: string) => {
+    if (url.startsWith('http')) {
+      window.open(url, '_blank');
+    } else if (url.startsWith('Search:')) {
+      const searchTerm = url.replace('Search:', '').trim();
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`, '_blank');
+    }
+  };
+
+  const getResourceIcon = (type: string) => {
+    switch (type) {
+      case 'video': return '🎥';
+      case 'article': return '📄';
+      case 'course': return '📚';
+      case 'practice': return '💻';
+      case 'project': return '🚀';
+      default: return '📖';
+    }
+  };
+
+  const getWeekProgress = (week: WeeklyPlan) => {
+    const totalItems = week.resources.length + week.milestones.length;
+    const completedItems = week.resources.filter(r => completedResources.has(r.title)).length +
+                          week.milestones.filter(m => completedMilestones.has(m)).length;
+    return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+  };
+
+  const getOverallProgress = () => {
+    if (!careerPath?.weeklyPlan) return 0;
+    
+    const totalWeeks = careerPath.weeklyPlan.length;
+    const completedWeeks = careerPath.weeklyPlan.filter(week => getWeekProgress(week) === 100).length;
+    return totalWeeks > 0 ? Math.round((completedWeeks / totalWeeks) * 100) : 0;
+  };
+
+  const goToWeek = (weekNumber: number) => {
+    if (weekNumber >= 1 && weekNumber <= (careerPath?.totalWeeks || 0)) {
+      setCurrentWeek(weekNumber);
+    }
+  };
+
+  const currentWeekData = careerPath?.weeklyPlan?.find(week => week.week === currentWeek);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!careerPath || !currentWeekData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Learning Plan Found</h2>
+          <p className="text-gray-600 mb-4">Please generate a career path first.</p>
+          <Button onClick={() => navigate('/dashboard')}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/dashboard')}
+                icon={<ArrowLeft className="w-4 h-4" />}
+              >
+                Back to Dashboard
+              </Button>
+              <div className="ml-6">
+                <h1 className="text-2xl font-bold text-gray-900">{careerPath.title}</h1>
+                <p className="text-gray-600">Week {currentWeek} of {careerPath.totalWeeks}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-sm text-gray-600">Overall Progress</div>
+                <div className="text-lg font-bold text-blue-600">{getOverallProgress()}%</div>
+              </div>
+              <Button onClick={saveProgress} variant="outline">
+                Save Progress
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Week Navigation Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-8">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                Learning Plan
+              </h3>
+              
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {careerPath.weeklyPlan.map((week) => {
+                  const progress = getWeekProgress(week);
+                  const isActive = week.week === currentWeek;
+                  
+                  return (
+                    <button
+                      key={week.week}
+                      onClick={() => goToWeek(week.week)}
+                      className={`w-full text-left p-3 rounded-lg transition-colors ${
+                        isActive 
+                          ? 'bg-blue-50 border-2 border-blue-200' 
+                          : 'hover:bg-gray-50 border-2 border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`font-medium ${isActive ? 'text-blue-900' : 'text-gray-900'}`}>
+                          Week {week.week}
+                        </span>
+                        {progress === 100 && (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">{week.title}</div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">{progress}% complete</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Week Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-8 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-3xl font-bold mb-2">Week {currentWeekData.week}: {currentWeekData.title}</h2>
+                  <p className="text-blue-100 text-lg">{currentWeekData.description}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-blue-100 text-sm">Week Progress</div>
+                  <div className="text-3xl font-bold">{getWeekProgress(currentWeekData)}%</div>
+                </div>
+              </div>
+              
+              {/* Week Navigation */}
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="secondary"
+                  onClick={() => goToWeek(currentWeek - 1)}
+                  disabled={currentWeek === 1}
+                  icon={<ChevronLeft className="w-4 h-4" />}
+                  className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                >
+                  Previous Week
+                </Button>
+                
+                <div className="flex items-center space-x-2">
+                  {currentWeekData.skills.map((skill, index) => (
+                    <span key={index} className="px-3 py-1 bg-white/20 text-white rounded-full text-sm">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+                
+                <Button
+                  variant="secondary"
+                  onClick={() => goToWeek(currentWeek + 1)}
+                  disabled={currentWeek === careerPath.totalWeeks}
+                  icon={<ChevronRight className="w-4 h-4" />}
+                  className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                >
+                  Next Week
+                </Button>
+              </div>
+            </div>
+
+            {/* Learning Resources */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                <BookOpen className="w-6 h-6 mr-3 text-blue-600" />
+                Learning Resources
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {currentWeekData.resources.map((resource, index) => {
+                  const isCompleted = completedResources.has(resource.title);
+                  
+                  return (
+                    <div key={index} className={`border rounded-xl p-6 transition-all hover:shadow-md ${
+                      isCompleted ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:border-blue-300'
+                    }`}>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center">
+                          <span className="text-2xl mr-3">{getResourceIcon(resource.type)}</span>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{resource.title}</h4>
+                            <p className="text-sm text-gray-500">{resource.source} • {resource.duration}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => openResource(resource.url)}
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => toggleResourceCompletion(resource.title)}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              isCompleted
+                                ? 'bg-green-500 border-green-500'
+                                : 'border-gray-300 hover:border-green-400'
+                            }`}
+                          >
+                            {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm mb-4">{resource.description}</p>
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                          resource.type === 'video' ? 'bg-red-100 text-red-800' :
+                          resource.type === 'course' ? 'bg-blue-100 text-blue-800' :
+                          resource.type === 'article' ? 'bg-green-100 text-green-800' :
+                          resource.type === 'practice' ? 'bg-purple-100 text-purple-800' :
+                          'bg-orange-100 text-orange-800'
+                        }`}>
+                          {resource.type}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openResource(resource.url)}
+                          icon={<Play className="w-3 h-3" />}
+                        >
+                          Start
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Milestones */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                <Target className="w-6 h-6 mr-3 text-green-600" />
+                Week Milestones
+              </h3>
+              
+              <div className="space-y-4">
+                {currentWeekData.milestones.map((milestone, index) => {
+                  const isCompleted = completedMilestones.has(milestone);
+                  
+                  return (
+                    <div key={index} className={`flex items-center p-4 rounded-lg border transition-colors ${
+                      isCompleted ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:bg-gray-50'
+                    }`}>
+                      <button
+                        onClick={() => toggleMilestoneCompletion(milestone)}
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 transition-colors ${
+                          isCompleted
+                            ? 'bg-green-500 border-green-500'
+                            : 'border-gray-300 hover:border-green-400'
+                        }`}
+                      >
+                        {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
+                      </button>
+                      <span className={`flex-1 ${isCompleted ? 'text-green-800 line-through' : 'text-gray-900'}`}>
+                        {milestone}
+                      </span>
+                      {isCompleted && (
+                        <Award className="w-5 h-5 text-green-600" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Projects */}
+            {currentWeekData.projects && currentWeekData.projects.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <Star className="w-6 h-6 mr-3 text-orange-600" />
+                  Practice Projects
+                </h3>
+                
+                <div className="space-y-4">
+                  {currentWeekData.projects.map((project, index) => (
+                    <div key={index} className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full mr-4"></div>
+                      <span className="flex-1 text-gray-900">{project}</span>
+                      <Button size="sm" variant="outline">
+                        Start Project
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Week Summary */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-8 border border-purple-200">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <BarChart3 className="w-6 h-6 mr-3 text-purple-600" />
+                Week Summary
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {currentWeekData.resources.filter(r => completedResources.has(r.title)).length}
+                  </div>
+                  <div className="text-sm text-gray-600">Resources Completed</div>
+                  <div className="text-xs text-gray-500">of {currentWeekData.resources.length}</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {currentWeekData.milestones.filter(m => completedMilestones.has(m)).length}
+                  </div>
+                  <div className="text-sm text-gray-600">Milestones Achieved</div>
+                  <div className="text-xs text-gray-500">of {currentWeekData.milestones.length}</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{getWeekProgress(currentWeekData)}%</div>
+                  <div className="text-sm text-gray-600">Week Progress</div>
+                  <div className="text-xs text-gray-500">Overall completion</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WeeklyLearningPlan;

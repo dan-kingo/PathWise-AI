@@ -5,6 +5,7 @@ import { authenticate } from '../middlewares/auth.middleware.js';
 import {
   getProfile,
   updateProfile,
+  updateLearningProgress,
   uploadAvatar,
   deleteProfile,
   checkProfileStatus
@@ -48,6 +49,7 @@ router.use(authenticate);
 router.get('/', getProfile);
 router.get('/status', checkProfileStatus);
 router.put('/', updateProfile);
+router.put('/learning-progress', updateLearningProgress);
 router.post('/avatar', upload.single('avatar'), uploadAvatar);
 router.delete('/', deleteProfile);
 

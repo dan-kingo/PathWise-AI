@@ -65,6 +65,39 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
+export const updateLearningProgress = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id;
+    const { learningProgress } = req.body;
+
+    if (!learningProgress) {
+      return res.status(400).json({ message: 'Learning progress data is required' });
+    }
+
+    const profile = await Profile.findOneAndUpdate(
+      { userId },
+      { 
+        $set: { 
+          learningProgress: {
+            ...learningProgress,
+            lastActivityAt: new Date()
+          }
+        }
+      },
+      { new: true, upsert: true }
+    );
+
+    return res.json({
+      success: true,
+      message: 'Learning progress updated successfully',
+      profile
+    });
+  } catch (error) {
+    console.error('Update learning progress error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 export const uploadAvatar = async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any).id;

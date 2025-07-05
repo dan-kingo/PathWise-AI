@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '../../stores/profileStore';
 import { api } from '../../services/api';
 import Button from '../ui/Button';
@@ -24,7 +25,8 @@ import {
   Star,
   Award,
   Calendar,
-  BarChart3
+  BarChart3,
+  ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -61,6 +63,7 @@ interface CareerPath {
 }
 
 const AICareerPathPlanner: React.FC = () => {
+  const navigate = useNavigate();
   const { profile } = useProfileStore();
   const [targetRole, setTargetRole] = useState('');
   const [timeframe, setTimeframe] = useState('');
@@ -161,6 +164,14 @@ const AICareerPathPlanner: React.FC = () => {
       toast.success('Career path saved successfully!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to save career path');
+    }
+  };
+
+  const startLearningPlan = () => {
+    if (generatedPath || savedPath) {
+      navigate('/learning-plan');
+    } else {
+      toast.error('Please generate or load a career path first');
     }
   };
 
@@ -357,21 +368,29 @@ const AICareerPathPlanner: React.FC = () => {
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">{generatedPath.title}</h2>
                 <p className="text-lg text-gray-600">{generatedPath.description}</p>
               </div>
-              {!isPathSaved && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                {!isPathSaved && (
+                  <Button
+                    onClick={saveCareerPath}
+                    icon={<Save className="w-5 h-5" />}
+                    variant="outline"
+                  >
+                    Save Path
+                  </Button>
+                )}
+                {isPathSaved && (
+                  <div className="flex items-center text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    <span className="font-medium">Path Saved</span>
+                  </div>
+                )}
                 <Button
-                  onClick={saveCareerPath}
-                  icon={<Save className="w-5 h-5" />}
-                  className="flex-shrink-0"
+                  onClick={startLearningPlan}
+                  icon={<ArrowRight className="w-5 h-5" />}
                 >
-                  Save Path
+                  Start Learning Plan
                 </Button>
-              )}
-              {isPathSaved && (
-                <div className="flex items-center text-green-600 bg-green-50 px-4 py-2 rounded-lg">
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  <span className="font-medium">Path Saved</span>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Path Stats */}
@@ -474,9 +493,17 @@ const AICareerPathPlanner: React.FC = () => {
 
           {/* Weekly Plan */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-6xl mx-auto">
-            <div className="flex items-center mb-8">
-              <Calendar className="w-6 h-6 mr-3 text-blue-600" />
-              <h3 className="text-2xl font-semibold text-gray-900">Weekly Learning Plan</h3>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center">
+                <Calendar className="w-6 h-6 mr-3 text-blue-600" />
+                <h3 className="text-2xl font-semibold text-gray-900">Weekly Learning Plan</h3>
+              </div>
+              <Button
+                onClick={startLearningPlan}
+                icon={<ArrowRight className="w-5 h-5" />}
+              >
+                Start Learning Plan
+              </Button>
             </div>
             
             <div className="space-y-6">
@@ -601,13 +628,22 @@ const AICareerPathPlanner: React.FC = () => {
               <Save className="w-5 h-5 mr-2 text-blue-600" />
               Your Saved Career Path
             </h3>
-            <Button
-              onClick={() => setGeneratedPath(savedPath)}
-              variant="outline"
-              size="sm"
-            >
-              View Details
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setGeneratedPath(savedPath)}
+                variant="outline"
+                size="sm"
+              >
+                View Details
+              </Button>
+              <Button
+                onClick={startLearningPlan}
+                size="sm"
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                Start Learning Plan
+              </Button>
+            </div>
           </div>
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
             <h4 className="font-semibold text-blue-900 text-lg">{savedPath.title}</h4>

@@ -218,6 +218,28 @@ export const api = {
     return data;
   },
 
+  updateLearningProgress: async (learningProgress: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/profile/learning-progress`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ learningProgress }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update learning progress');
+    }
+
+    return data;
+  },
+
   uploadAvatar: async (file: File) => {
     const token = localStorage.getItem('auth_token');
     if (!token) throw new Error('No token found');

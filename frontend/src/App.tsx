@@ -8,6 +8,7 @@ import AuthCallback from './components/AuthCallback';
 import VerifyEmail from './components/VerifyEmail';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import WeeklyLearningPlan from './components/career/WeeklyLearningPlan';
 import LoadingSpinner from './components/LoadingSpinner';
 import Toast from './components/ui/Toast';
 
@@ -85,6 +86,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/learning-plan" 
+        element={
+          <ProtectedRoute>
+            <WeeklyLearningPlan />
           </ProtectedRoute>
         } 
       />

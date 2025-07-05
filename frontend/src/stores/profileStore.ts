@@ -34,6 +34,13 @@ export interface UserProfile {
   isComplete?: boolean;
   savedCareerPath?: any;
   careerPathGeneratedAt?: string;
+  learningProgress?: {
+    currentWeek: number;
+    completedResources: string[];
+    completedMilestones: string[];
+    startedAt: string;
+    lastActivityAt: string;
+  };
 }
 
 interface ProfileState {
@@ -42,6 +49,7 @@ interface ProfileState {
   loading: boolean;
   setProfile: (profile: UserProfile) => void;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  updateLearningProgress: (progress: any) => Promise<void>;
   setLoading: (loading: boolean) => void;
   checkProfileCompleteness: () => void;
   fetchProfile: () => Promise<void>;
@@ -70,6 +78,21 @@ export const useProfileStore = create<ProfileState>()(
           }
         } catch (error) {
           console.error('Failed to update profile:', error);
+          throw error;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      updateLearningProgress: async (progress) => {
+        set({ loading: true });
+        try {
+          const response = await api.updateLearningProgress(progress);
+          if (response.success) {
+            set({ profile: response.profile });
+          }
+        } catch (error) {
+          console.error('Failed to update learning progress:', error);
           throw error;
         } finally {
           set({ loading: false });
