@@ -44,6 +44,5 @@ const profileSchema = new mongoose.Schema({
 });
 
 // Create index for better performance
-profileSchema.index({ userId: 1 });
 
 export default mongoose.model("Profile", profileSchema);
