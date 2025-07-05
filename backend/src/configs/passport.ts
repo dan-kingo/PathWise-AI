@@ -27,12 +27,17 @@ passport.use(new GoogleStrategy(
           email: profile.emails?.[0].value,
           name: profile.displayName,
           avatar: profile.photos?.[0].value,
-          provider: 'google'
+          provider: 'google',
+          isEmailVerified: true // Google accounts are pre-verified
         });
       } else if (!user.googleId) {
         // Link Google account to existing user
         user.googleId = profile.id;
         user.provider = 'google';
+        user.isEmailVerified = true;
+        if (profile.photos?.[0].value) {
+          user.avatar = profile.photos[0].value;
+        }
         await user.save();
       }
 

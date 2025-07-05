@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import "./configs/passport.js";
 import connectDB from "./configs/db.js";
 import authRoutes from "./routes/auth.route.js";
+import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 dotenv.config();
 
@@ -20,7 +21,8 @@ app.use(helmet());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { message: 'Too many requests, please try again later.' }
 });
 app.use(limiter);
 
@@ -32,8 +34,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Session configuration
 app.use(
@@ -60,32 +62,42 @@ app.get("/", (_req: Request, res: Response) => {
   res.json({ 
     message: "Authentication API is running successfully!",
     timestamp: new Date().toISOString(),
+    version: "1.0.0",
     endpoints: {
-      google: "/auth/google",
-      profile: "/auth/me",
-      logout: "/auth/logout"
+      auth: {
+        signup: "POST /auth/signup",
+        login: "POST /auth/login",
+        google: "GET /auth/google",
+        profile: "GET /auth/me",
+        logout: "POST /auth/logout",
+        verifyEmail: "POST /auth/verify-email",
+        forgotPassword: "POST /auth/forgot-password",
+        resetPassword: "POST /auth/reset-password",
+        changePassword: "POST /auth/change-password"
+      }
     }
   });
 });
 
-// Error handling middleware
-app.use((err: any, req: Request, res: Response, next: any) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
 // 404 handler
-app.use('*', (req: Request, res: Response) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+app.use('*', notFound);
 
-// DB connection
-connectDB();
+// Error handling middleware
+app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
-});
+// DB connection and server start
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
+      console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
