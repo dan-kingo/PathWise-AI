@@ -1,6 +1,16 @@
 import dotenv from 'dotenv';
+import ModelClient, { isUnexpected } from "@azure-rest/ai-inference";
+import { AzureKeyCredential } from "@azure/core-auth";
 
 dotenv.config();
+
+interface GrokResponse {
+  choices: {
+    message: {
+      content: string;
+    }; 
+  }[];
+}
 
 interface CareerPathRequest {
   targetRole: string;
@@ -8,6 +18,7 @@ interface CareerPathRequest {
   experienceLevel: string;
   timeframe: string;
   interests: string[];
+  pace?: 'slow' | 'normal' | 'fast'; // New pace field
 }
 
 interface WeeklyPlan {
@@ -22,6 +33,8 @@ interface WeeklyPlan {
     duration: string;
     description: string;
     source: string;
+    difficulty?: string;
+    rating?: string;
   }[];
   milestones: string[];
   projects: string[];
@@ -43,35 +56,278 @@ interface CareerPath {
 }
 
 class GrokService {
-  private generateDynamicCareerPath(request: CareerPathRequest): CareerPath {
-    const { targetRole, currentSkills, experienceLevel, timeframe, interests } = request;
+  private client: ReturnType<typeof ModelClient>;
+  private modelName: string = "xai/grok-3";
+
+  constructor() {
+    const token = process.env.GITHUB_TOKEN;
+    const endpoint = "https://models.github.ai/inference";
+
+    if (!token) throw new Error("Missing GITHUB_TOKEN in environment");
+
+    this.client = ModelClient(endpoint, new AzureKeyCredential(token));
+  }
+
+  private async makeGrokRequest(prompt: string): Promise<string> {
+    const response = await this.client.path("/chat/completions").post({
+      body: {
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps. Always provide comprehensive weekly plans with specific skills, detailed resources with real URLs, clear milestones, and practical projects. Generate unique content based on the user's specific role, skills, interests, and experience level.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          }
+        ],
+        temperature: 0.8, // Increased for more creativity
+        top_p: 0.9,
+        model: this.modelName,
+      }
+    });
+
+    if (isUnexpected(response)) {
+      console.error("Grok model API error:", response.body.error);
+      throw new Error("Model response failed");
+    }
+
+    return response.body.choices[0]?.message?.content || '';
+  }
+
+  private async fetchYouTubeResources(skill: string, level: string): Promise<any[]> {
+    // Mock YouTube API integration - replace with actual YouTube Data API
+    const searchQuery = `${skill} ${level} tutorial`;
+    return [
+      {
+        title: `${skill} Complete Tutorial for ${level}s`,
+        type: "video",
+        url: `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`,
+        duration: "2-4 hours",
+        description: `Comprehensive ${skill} tutorial series`,
+        source: "YouTube",
+        difficulty: level,
+        rating: "4.7/5"
+      }
+    ];
+  }
+
+  private async fetchUdemyResources(skill: string): Promise<any[]> {
+    // Mock Udemy API integration - replace with actual Udemy API
+    return [
+      {
+        title: `Master ${skill} - Complete Course`,
+        type: "course",
+        url: `https://www.udemy.com/courses/search/?q=${encodeURIComponent(skill)}`,
+        duration: "10-20 hours",
+        description: `Professional ${skill} course with hands-on projects`,
+        source: "Udemy",
+        difficulty: "All Levels",
+        rating: "4.6/5"
+      }
+    ];
+  }
+
+  private async fetchCourseraResources(skill: string): Promise<any[]> {
+    // Mock Coursera API integration - replace with actual Coursera API
+    return [
+      {
+        title: `${skill} Specialization`,
+        type: "course",
+        url: `https://www.coursera.org/search?query=${encodeURIComponent(skill)}`,
+        duration: "4-6 weeks",
+        description: `University-level ${skill} specialization`,
+        source: "Coursera",
+        difficulty: "Intermediate",
+        rating: "4.8/5"
+      }
+    ];
+  }
+
+  private async fetchMDNResources(skill: string): Promise<any[]> {
+    // MDN Web Docs integration for web technologies
+    const webSkills = ['javascript', 'html', 'css', 'web', 'api', 'dom'];
+    if (!webSkills.some(webSkill => skill.toLowerCase().includes(webSkill))) {
+      return [];
+    }
+
+    return [
+      {
+        title: `${skill} - MDN Web Docs`,
+        type: "article",
+        url: `https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(skill)}`,
+        duration: "1-2 hours",
+        description: `Official documentation and guides for ${skill}`,
+        source: "MDN Web Docs",
+        difficulty: "All Levels",
+        rating: "4.9/5"
+      }
+    ];
+  }
+
+  private async fetchCommunityResources(skill: string): Promise<any[]> {
+    // Mock community-sourced content from DEV.to/Reddit
+    return [
+      {
+        title: `${skill} Community Guide`,
+        type: "article",
+        url: `https://dev.to/search?q=${encodeURIComponent(skill)}`,
+        duration: "30-60 minutes",
+        description: `Community-driven ${skill} tutorials and insights`,
+        source: "DEV.to",
+        difficulty: "Varies",
+        rating: "4.4/5"
+      },
+      {
+        title: `r/${skill.replace(/\s+/g, '')} - Reddit Community`,
+        type: "practice",
+        url: `https://www.reddit.com/search/?q=${encodeURIComponent(skill)}`,
+        duration: "Ongoing",
+        description: `Join the ${skill} community for discussions and help`,
+        source: "Reddit",
+        difficulty: "Community",
+        rating: "4.2/5"
+      }
+    ];
+  }
+
+  private generateRoleSpecificProjects(targetRole: string, week: number, skills: string[]): string[] {
+    const roleLower = targetRole.toLowerCase();
     
-    // Parse timeframe to get number of weeks
-    const totalWeeks = this.parseTimeframeToWeeks(timeframe);
+    // Frontend Developer Projects
+    if (roleLower.includes('frontend') || roleLower.includes('ui') || roleLower.includes('react')) {
+      const frontendProjects = [
+        "Personal Portfolio Website",
+        "Todo App with Local Storage",
+        "Weather Dashboard with API",
+        "E-commerce Product Catalog",
+        "Social Media Dashboard",
+        "Recipe Finder App",
+        "Movie Database Browser",
+        "Real-time Chat Application",
+        "Expense Tracker with Charts",
+        "Blog Platform with CMS",
+        "Task Management Board",
+        "Music Player Interface",
+        "Photo Gallery with Filters",
+        "Calculator with History",
+        "Quiz Application with Timer"
+      ];
+      return [frontendProjects[week % frontendProjects.length]];
+    }
     
-    // Determine difficulty based on experience level
-    const difficulty = this.getDifficultyLevel(experienceLevel);
+    // Backend Developer Projects
+    if (roleLower.includes('backend') || roleLower.includes('api') || roleLower.includes('server')) {
+      const backendProjects = [
+        "RESTful API for Blog",
+        "User Authentication System",
+        "File Upload Service",
+        "Real-time Notification System",
+        "Payment Processing API",
+        "Inventory Management System",
+        "Social Media API",
+        "Email Service Integration",
+        "Data Analytics Dashboard API",
+        "Microservice Architecture",
+        "GraphQL API Server",
+        "WebSocket Chat Server",
+        "Caching Layer Implementation",
+        "Database Migration Tool",
+        "API Rate Limiting Service"
+      ];
+      return [backendProjects[week % backendProjects.length]];
+    }
     
-    // Generate role-specific content
-    const roleData = this.getRoleSpecificData(targetRole);
+    // Data Science Projects
+    if (roleLower.includes('data') || roleLower.includes('scientist') || roleLower.includes('analytics')) {
+      const dataProjects = [
+        "Sales Data Analysis",
+        "Customer Segmentation Model",
+        "Predictive Analytics Dashboard",
+        "Sentiment Analysis Tool",
+        "Recommendation Engine",
+        "Time Series Forecasting",
+        "A/B Testing Framework",
+        "Fraud Detection System",
+        "Market Basket Analysis",
+        "Social Media Analytics",
+        "Healthcare Data Insights",
+        "Financial Risk Assessment",
+        "Supply Chain Optimization",
+        "Image Classification Model",
+        "Natural Language Processing Tool"
+      ];
+      return [dataProjects[week % dataProjects.length]];
+    }
     
-    // Generate weekly plan based on the target role and timeframe
-    const weeklyPlan = this.generateWeeklyPlan(targetRole, totalWeeks, currentSkills, interests);
+    // UX/UI Designer Projects
+    if (roleLower.includes('design') || roleLower.includes('ux') || roleLower.includes('ui')) {
+      const designProjects = [
+        "Mobile App Redesign",
+        "E-commerce User Journey",
+        "Accessibility Audit & Redesign",
+        "Design System Creation",
+        "User Research Study",
+        "Prototype Testing Session",
+        "Brand Identity Design",
+        "Dashboard Interface Design",
+        "Responsive Web Design",
+        "Voice Interface Design",
+        "AR/VR Experience Design",
+        "Service Design Blueprint",
+        "Information Architecture",
+        "Usability Testing Report",
+        "Design Portfolio Website"
+      ];
+      return [designProjects[week % designProjects.length]];
+    }
     
-    return {
-      title: `${targetRole} Career Path`,
-      description: `A comprehensive ${totalWeeks}-week program to become a proficient ${targetRole.toLowerCase()}. This path is tailored to your current skills and interests.`,
-      duration: timeframe,
-      difficulty,
-      totalWeeks,
-      prerequisites: this.generatePrerequisites(targetRole, experienceLevel),
-      outcomes: this.generateOutcomes(targetRole),
-      skillsToLearn: this.generateSkillsToLearn(targetRole, currentSkills),
-      weeklyPlan,
-      marketDemand: roleData.marketDemand,
-      averageSalary: roleData.averageSalary,
-      jobTitles: roleData.jobTitles
-    };
+    // DevOps Projects
+    if (roleLower.includes('devops') || roleLower.includes('cloud') || roleLower.includes('infrastructure')) {
+      const devopsProjects = [
+        "CI/CD Pipeline Setup",
+        "Container Orchestration",
+        "Infrastructure as Code",
+        "Monitoring & Alerting System",
+        "Auto-scaling Configuration",
+        "Security Scanning Pipeline",
+        "Backup & Recovery System",
+        "Load Balancer Configuration",
+        "Database Migration Pipeline",
+        "Disaster Recovery Plan",
+        "Performance Optimization",
+        "Cost Optimization Analysis",
+        "Multi-environment Setup",
+        "Service Mesh Implementation",
+        "Compliance Automation"
+      ];
+      return [devopsProjects[week % devopsProjects.length]];
+    }
+    
+    // Generic projects for other roles
+    const genericProjects = [
+      `${targetRole} Portfolio Project`,
+      `Industry-specific ${targetRole} Tool`,
+      `${targetRole} Case Study`,
+      `Professional ${targetRole} Application`,
+      `${targetRole} Best Practices Implementation`
+    ];
+    
+    return [genericProjects[week % genericProjects.length]];
+  }
+
+  private adjustTimeframeForPace(timeframe: string, pace: string): number {
+    let baseWeeks = this.parseTimeframeToWeeks(timeframe);
+    
+    switch (pace) {
+      case 'slow':
+        return Math.ceil(baseWeeks * 1.5); // 50% more time
+      case 'fast':
+        return Math.ceil(baseWeeks * 0.75); // 25% less time
+      case 'normal':
+      default:
+        return baseWeeks;
+    }
   }
 
   private parseTimeframeToWeeks(timeframe: string): number {
@@ -85,727 +341,106 @@ class GrokService {
       return match ? parseInt(match[1]) * 4 : 8;
     }
     
-    // Default to 8 weeks if can't parse
-    return 8;
-  }
-
-  private getDifficultyLevel(experienceLevel: string): 'Beginner' | 'Intermediate' | 'Advanced' {
-    switch (experienceLevel.toLowerCase()) {
-      case 'entry':
-      case 'beginner':
-        return 'Beginner';
-      case 'junior':
-      case 'mid':
-        return 'Intermediate';
-      case 'senior':
-      case 'expert':
-        return 'Advanced';
-      default:
-        return 'Intermediate';
-    }
-  }
-
-  private getRoleSpecificData(targetRole: string) {
-    const roleLower = targetRole.toLowerCase();
-    
-    // Frontend Developer
-    if (roleLower.includes('frontend') || roleLower.includes('ui') || roleLower.includes('react')) {
-      return {
-        marketDemand: "High demand with 22% growth expected over next 5 years",
-        averageSalary: "$75,000 - $130,000",
-        jobTitles: ["Frontend Developer", "React Developer", "UI Developer", "JavaScript Developer"]
-      };
-    }
-    
-    // Backend Developer
-    if (roleLower.includes('backend') || roleLower.includes('api') || roleLower.includes('server')) {
-      return {
-        marketDemand: "Very high demand with 25% growth expected",
-        averageSalary: "$80,000 - $140,000",
-        jobTitles: ["Backend Developer", "API Developer", "Server Engineer", "Node.js Developer"]
-      };
-    }
-    
-    // Full Stack Developer
-    if (roleLower.includes('full') || roleLower.includes('stack')) {
-      return {
-        marketDemand: "Extremely high demand with 30% growth expected",
-        averageSalary: "$85,000 - $150,000",
-        jobTitles: ["Full Stack Developer", "Software Engineer", "Web Developer", "Application Developer"]
-      };
-    }
-    
-    // Data Scientist
-    if (roleLower.includes('data') || roleLower.includes('scientist') || roleLower.includes('analytics')) {
-      return {
-        marketDemand: "High demand with 35% growth expected",
-        averageSalary: "$95,000 - $160,000",
-        jobTitles: ["Data Scientist", "Data Analyst", "Machine Learning Engineer", "Research Scientist"]
-      };
-    }
-    
-    // UX/UI Designer
-    if (roleLower.includes('design') || roleLower.includes('ux') || roleLower.includes('ui')) {
-      return {
-        marketDemand: "Strong demand with 18% growth expected",
-        averageSalary: "$65,000 - $120,000",
-        jobTitles: ["UX Designer", "UI Designer", "Product Designer", "Visual Designer"]
-      };
-    }
-    
-    // DevOps Engineer
-    if (roleLower.includes('devops') || roleLower.includes('cloud') || roleLower.includes('infrastructure')) {
-      return {
-        marketDemand: "Very high demand with 28% growth expected",
-        averageSalary: "$90,000 - $155,000",
-        jobTitles: ["DevOps Engineer", "Cloud Engineer", "Site Reliability Engineer", "Infrastructure Engineer"]
-      };
-    }
-    
-    // Default for any other role
-    return {
-      marketDemand: "Good demand with steady growth expected",
-      averageSalary: "$70,000 - $120,000",
-      jobTitles: [targetRole, "Software Developer", "Technical Specialist"]
-    };
-  }
-
-  private generatePrerequisites(targetRole: string, experienceLevel: string): string[] {
-    const roleLower = targetRole.toLowerCase();
-    const basePrereqs = ["Basic computer literacy", "Problem-solving mindset", "Willingness to learn"];
-    
-    if (experienceLevel === 'entry') {
-      return basePrereqs;
-    }
-    
-    if (roleLower.includes('frontend') || roleLower.includes('ui')) {
-      return [...basePrereqs, "Basic HTML/CSS knowledge", "Understanding of web browsers"];
-    }
-    
-    if (roleLower.includes('backend') || roleLower.includes('api')) {
-      return [...basePrereqs, "Basic programming concepts", "Understanding of databases"];
-    }
-    
-    if (roleLower.includes('data')) {
-      return [...basePrereqs, "Basic mathematics/statistics", "Analytical thinking"];
-    }
-    
-    if (roleLower.includes('design')) {
-      return [...basePrereqs, "Creative mindset", "Basic design principles"];
-    }
-    
-    return basePrereqs;
-  }
-
-  private generateOutcomes(targetRole: string): string[] {
-    const roleLower = targetRole.toLowerCase();
-    
-    if (roleLower.includes('frontend') || roleLower.includes('ui')) {
-      return [
-        "Build responsive web applications",
-        "Master modern JavaScript frameworks",
-        "Create intuitive user interfaces",
-        "Deploy production-ready applications",
-        "Optimize web performance"
-      ];
-    }
-    
-    if (roleLower.includes('backend') || roleLower.includes('api')) {
-      return [
-        "Design and build APIs",
-        "Manage databases effectively",
-        "Implement security best practices",
-        "Deploy scalable server applications",
-        "Handle data processing and storage"
-      ];
-    }
-    
-    if (roleLower.includes('data')) {
-      return [
-        "Analyze complex datasets",
-        "Build machine learning models",
-        "Create data visualizations",
-        "Extract actionable insights",
-        "Present findings to stakeholders"
-      ];
-    }
-    
-    if (roleLower.includes('design')) {
-      return [
-        "Create user-centered designs",
-        "Conduct user research",
-        "Build interactive prototypes",
-        "Design accessible interfaces",
-        "Collaborate with development teams"
-      ];
-    }
-    
-    return [
-      "Master core technical skills",
-      "Build portfolio projects",
-      "Understand industry best practices",
-      "Develop problem-solving abilities",
-      "Prepare for job interviews"
-    ];
-  }
-
-  private generateSkillsToLearn(targetRole: string, currentSkills: string[]): string[] {
-    const roleLower = targetRole.toLowerCase();
-    let skillsToLearn: string[] = [];
-    
-    if (roleLower.includes('frontend') || roleLower.includes('ui')) {
-      skillsToLearn = ["JavaScript", "React", "CSS", "HTML", "TypeScript", "Responsive Design", "Git", "Testing"];
-    } else if (roleLower.includes('backend') || roleLower.includes('api')) {
-      skillsToLearn = ["Node.js", "Python", "Databases", "API Design", "Authentication", "Cloud Services", "Docker", "Testing"];
-    } else if (roleLower.includes('data')) {
-      skillsToLearn = ["Python", "SQL", "Machine Learning", "Data Visualization", "Statistics", "Pandas", "NumPy", "Jupyter"];
-    } else if (roleLower.includes('design')) {
-      skillsToLearn = ["Figma", "User Research", "Prototyping", "Design Systems", "Accessibility", "Usability Testing"];
-    } else {
-      skillsToLearn = ["Programming", "Problem Solving", "Version Control", "Testing", "Documentation"];
-    }
-    
-    // Filter out skills the user already has
-    return skillsToLearn.filter(skill => 
-      !currentSkills.some(currentSkill => 
-        currentSkill.toLowerCase().includes(skill.toLowerCase()) || 
-        skill.toLowerCase().includes(currentSkill.toLowerCase())
-      )
-    );
-  }
-
-  private generateWeeklyPlan(targetRole: string, totalWeeks: number, currentSkills: string[], interests: string[]): WeeklyPlan[] {
-    const roleLower = targetRole.toLowerCase();
-    const weeklyPlan: WeeklyPlan[] = [];
-    
-    // Generate content based on role type
-    if (roleLower.includes('frontend') || roleLower.includes('ui')) {
-      return this.generateFrontendWeeklyPlan(totalWeeks);
-    } else if (roleLower.includes('backend') || roleLower.includes('api')) {
-      return this.generateBackendWeeklyPlan(totalWeeks);
-    } else if (roleLower.includes('data')) {
-      return this.generateDataScienceWeeklyPlan(totalWeeks);
-    } else if (roleLower.includes('design')) {
-      return this.generateDesignWeeklyPlan(totalWeeks);
-    } else {
-      return this.generateGenericWeeklyPlan(totalWeeks, targetRole);
-    }
-  }
-
-  private generateFrontendWeeklyPlan(totalWeeks: number): WeeklyPlan[] {
-    const baseWeeks = [
-      {
-        week: 1,
-        title: "HTML & CSS Fundamentals",
-        description: "Master the building blocks of web development",
-        skills: ["HTML5", "CSS3", "Responsive Design"],
-        resources: [
-          {
-            title: "HTML & CSS Crash Course",
-            type: "course" as const,
-            url: "https://www.freecodecamp.org/learn/responsive-web-design/",
-            duration: "6 hours",
-            description: "Complete guide to HTML and CSS fundamentals",
-            source: "freeCodeCamp"
-          },
-          {
-            title: "CSS Grid and Flexbox",
-            type: "video" as const,
-            url: "https://www.youtube.com/results?search_query=css+grid+flexbox+tutorial",
-            duration: "3 hours",
-            description: "Modern CSS layout techniques",
-            source: "YouTube"
-          }
-        ],
-        milestones: ["Create semantic HTML structure", "Style with CSS", "Build responsive layouts"],
-        projects: ["Personal Portfolio Landing Page"]
-      },
-      {
-        week: 2,
-        title: "JavaScript Essentials",
-        description: "Learn the programming language of the web",
-        skills: ["JavaScript", "DOM Manipulation", "ES6+"],
-        resources: [
-          {
-            title: "JavaScript Fundamentals",
-            type: "course" as const,
-            url: "https://javascript.info/",
-            duration: "8 hours",
-            description: "Comprehensive JavaScript tutorial",
-            source: "JavaScript.info"
-          },
-          {
-            title: "DOM Manipulation Guide",
-            type: "article" as const,
-            url: "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model",
-            duration: "2 hours",
-            description: "Learn to interact with web pages",
-            source: "MDN Web Docs"
-          }
-        ],
-        milestones: ["Understand JavaScript syntax", "Manipulate DOM elements", "Handle events"],
-        projects: ["Interactive To-Do List"]
-      },
-      {
-        week: 3,
-        title: "React Fundamentals",
-        description: "Introduction to the most popular frontend framework",
-        skills: ["React", "JSX", "Components", "Props"],
-        resources: [
-          {
-            title: "React Official Tutorial",
-            type: "course" as const,
-            url: "https://react.dev/learn",
-            duration: "5 hours",
-            description: "Official React documentation and tutorial",
-            source: "React.dev"
-          },
-          {
-            title: "React Components Deep Dive",
-            type: "video" as const,
-            url: "https://www.youtube.com/results?search_query=react+components+tutorial",
-            duration: "4 hours",
-            description: "Understanding React component architecture",
-            source: "YouTube"
-          }
-        ],
-        milestones: ["Create React components", "Manage component state", "Handle props"],
-        projects: ["React Weather App"]
-      }
-    ];
-
-    // Extend or trim based on total weeks
-    return this.adjustWeeklyPlan(baseWeeks, totalWeeks, "frontend");
-  }
-
-  private generateBackendWeeklyPlan(totalWeeks: number): WeeklyPlan[] {
-    const baseWeeks = [
-      {
-        week: 1,
-        title: "Server-Side Programming Basics",
-        description: "Introduction to backend development concepts",
-        skills: ["Node.js", "Express.js", "HTTP"],
-        resources: [
-          {
-            title: "Node.js Crash Course",
-            type: "course" as const,
-            url: "https://nodejs.org/en/docs/guides/getting-started-guide/",
-            duration: "4 hours",
-            description: "Getting started with Node.js",
-            source: "Node.js Official"
-          },
-          {
-            title: "Express.js Tutorial",
-            type: "video" as const,
-            url: "https://www.youtube.com/results?search_query=express+js+tutorial",
-            duration: "3 hours",
-            description: "Building web servers with Express",
-            source: "YouTube"
-          }
-        ],
-        milestones: ["Set up Node.js environment", "Create basic server", "Handle HTTP requests"],
-        projects: ["Simple REST API"]
-      },
-      {
-        week: 2,
-        title: "Database Integration",
-        description: "Learn to work with databases",
-        skills: ["MongoDB", "SQL", "Database Design"],
-        resources: [
-          {
-            title: "Database Design Fundamentals",
-            type: "course" as const,
-            url: "https://www.freecodecamp.org/learn/relational-database/",
-            duration: "6 hours",
-            description: "Understanding database concepts",
-            source: "freeCodeCamp"
-          },
-          {
-            title: "MongoDB Tutorial",
-            type: "article" as const,
-            url: "https://docs.mongodb.com/manual/tutorial/",
-            duration: "4 hours",
-            description: "Working with MongoDB",
-            source: "MongoDB Docs"
-          }
-        ],
-        milestones: ["Design database schema", "Perform CRUD operations", "Connect database to API"],
-        projects: ["Blog API with Database"]
-      }
-    ];
-
-    return this.adjustWeeklyPlan(baseWeeks, totalWeeks, "backend");
-  }
-
-  private generateDataScienceWeeklyPlan(totalWeeks: number): WeeklyPlan[] {
-    const baseWeeks = [
-      {
-        week: 1,
-        title: "Python for Data Science",
-        description: "Master Python programming for data analysis",
-        skills: ["Python", "Pandas", "NumPy"],
-        resources: [
-          {
-            title: "Python Data Science Handbook",
-            type: "course" as const,
-            url: "https://jakevdp.github.io/PythonDataScienceHandbook/",
-            duration: "8 hours",
-            description: "Comprehensive Python for data science",
-            source: "GitHub"
-          },
-          {
-            title: "Pandas Tutorial",
-            type: "video" as const,
-            url: "https://www.youtube.com/results?search_query=pandas+tutorial",
-            duration: "4 hours",
-            description: "Data manipulation with Pandas",
-            source: "YouTube"
-          }
-        ],
-        milestones: ["Set up Python environment", "Load and clean data", "Basic data analysis"],
-        projects: ["Data Cleaning Project"]
-      },
-      {
-        week: 2,
-        title: "Data Visualization",
-        description: "Create compelling visualizations",
-        skills: ["Matplotlib", "Seaborn", "Data Storytelling"],
-        resources: [
-          {
-            title: "Data Visualization with Python",
-            type: "course" as const,
-            url: "https://matplotlib.org/stable/tutorials/index.html",
-            duration: "5 hours",
-            description: "Creating charts and graphs",
-            source: "Matplotlib"
-          }
-        ],
-        milestones: ["Create basic plots", "Design interactive visualizations", "Tell stories with data"],
-        projects: ["Sales Data Dashboard"]
-      }
-    ];
-
-    return this.adjustWeeklyPlan(baseWeeks, totalWeeks, "data");
-  }
-
-  private generateDesignWeeklyPlan(totalWeeks: number): WeeklyPlan[] {
-    const baseWeeks = [
-      {
-        week: 1,
-        title: "Design Fundamentals",
-        description: "Learn core design principles and theory",
-        skills: ["Design Principles", "Color Theory", "Typography"],
-        resources: [
-          {
-            title: "Design Principles Guide",
-            type: "article" as const,
-            url: "https://www.interaction-design.org/literature/topics/design-principles",
-            duration: "3 hours",
-            description: "Understanding fundamental design principles",
-            source: "Interaction Design Foundation"
-          },
-          {
-            title: "Color Theory for Designers",
-            type: "video" as const,
-            url: "https://www.youtube.com/results?search_query=color+theory+design",
-            duration: "2 hours",
-            description: "Mastering color in design",
-            source: "YouTube"
-          }
-        ],
-        milestones: ["Understand design principles", "Create color palettes", "Choose appropriate typography"],
-        projects: ["Brand Identity Design"]
-      },
-      {
-        week: 2,
-        title: "Design Tools Mastery",
-        description: "Master industry-standard design tools",
-        skills: ["Figma", "Prototyping", "Design Systems"],
-        resources: [
-          {
-            title: "Figma Complete Course",
-            type: "course" as const,
-            url: "https://www.figma.com/resources/learn-design/",
-            duration: "6 hours",
-            description: "Complete Figma tutorial",
-            source: "Figma"
-          }
-        ],
-        milestones: ["Create designs in Figma", "Build interactive prototypes", "Develop design systems"],
-        projects: ["Mobile App Design"]
-      }
-    ];
-
-    return this.adjustWeeklyPlan(baseWeeks, totalWeeks, "design");
-  }
-
-  private generateGenericWeeklyPlan(totalWeeks: number, targetRole: string): WeeklyPlan[] {
-    const baseWeeks = [
-      {
-        week: 1,
-        title: "Fundamentals & Setup",
-        description: `Introduction to ${targetRole} concepts and environment setup`,
-        skills: ["Basic Concepts", "Environment Setup", "Tools"],
-        resources: [
-          {
-            title: `${targetRole} Getting Started Guide`,
-            type: "course" as const,
-            url: "https://www.freecodecamp.org/",
-            duration: "4 hours",
-            description: `Introduction to ${targetRole}`,
-            source: "freeCodeCamp"
-          },
-          {
-            title: `${targetRole} Best Practices`,
-            type: "article" as const,
-            url: "https://developer.mozilla.org/en-US/docs/Learn",
-            duration: "2 hours",
-            description: "Industry best practices and standards",
-            source: "MDN Web Docs"
-          }
-        ],
-        milestones: ["Complete environment setup", "Understand basic concepts", "Create first project"],
-        projects: [`Basic ${targetRole} Project`]
-      },
-      {
-        week: 2,
-        title: "Core Skills Development",
-        description: "Building essential skills and knowledge",
-        skills: ["Core Technologies", "Problem Solving", "Best Practices"],
-        resources: [
-          {
-            title: "Advanced Concepts",
-            type: "video" as const,
-            url: "https://www.youtube.com/results?search_query=" + encodeURIComponent(targetRole),
-            duration: "5 hours",
-            description: "Deep dive into advanced topics",
-            source: "YouTube"
-          }
-        ],
-        milestones: ["Master core concepts", "Build intermediate projects", "Apply best practices"],
-        projects: [`Intermediate ${targetRole} Application`]
-      }
-    ];
-
-    return this.adjustWeeklyPlan(baseWeeks, totalWeeks, "generic");
-  }
-
-  private adjustWeeklyPlan(baseWeeks: WeeklyPlan[], totalWeeks: number, type: string): WeeklyPlan[] {
-    if (totalWeeks <= baseWeeks.length) {
-      return baseWeeks.slice(0, totalWeeks);
-    }
-
-    // Extend the plan for longer timeframes
-    const extendedPlan = [...baseWeeks];
-    
-    for (let week = baseWeeks.length + 1; week <= totalWeeks; week++) {
-      let weekData: WeeklyPlan;
-      
-      if (type === "frontend") {
-        weekData = this.generateAdvancedFrontendWeek(week);
-      } else if (type === "backend") {
-        weekData = this.generateAdvancedBackendWeek(week);
-      } else if (type === "data") {
-        weekData = this.generateAdvancedDataWeek(week);
-      } else if (type === "design") {
-        weekData = this.generateAdvancedDesignWeek(week);
-      } else {
-        weekData = this.generateAdvancedGenericWeek(week);
-      }
-      
-      extendedPlan.push(weekData);
-    }
-
-    return extendedPlan;
-  }
-
-  private generateAdvancedFrontendWeek(week: number): WeeklyPlan {
-    const topics = [
-      { title: "State Management", skills: ["Redux", "Context API", "State Patterns"] },
-      { title: "Testing & Quality", skills: ["Jest", "React Testing Library", "E2E Testing"] },
-      { title: "Performance Optimization", skills: ["Code Splitting", "Lazy Loading", "Performance Metrics"] },
-      { title: "Advanced React Patterns", skills: ["Hooks", "HOCs", "Render Props"] },
-      { title: "Build Tools & Deployment", skills: ["Webpack", "Vite", "CI/CD"] },
-      { title: "TypeScript Integration", skills: ["TypeScript", "Type Safety", "Advanced Types"] },
-      { title: "Mobile Development", skills: ["React Native", "Progressive Web Apps"] },
-      { title: "Portfolio & Job Prep", skills: ["Portfolio Development", "Interview Prep"] }
-    ];
-
-    const topicIndex = (week - 3) % topics.length;
-    const topic = topics[topicIndex];
-
-    return {
-      week,
-      title: topic.title,
-      description: `Advanced frontend development: ${topic.title.toLowerCase()}`,
-      skills: topic.skills,
-      resources: [
-        {
-          title: `${topic.title} Masterclass`,
-          type: "course",
-          url: "https://www.freecodecamp.org/",
-          duration: "6 hours",
-          description: `Deep dive into ${topic.title.toLowerCase()}`,
-          source: "freeCodeCamp"
-        },
-        {
-          title: `${topic.title} Best Practices`,
-          type: "article",
-          url: "https://developer.mozilla.org/en-US/docs/Learn",
-          duration: "2 hours",
-          description: `Industry best practices for ${topic.title.toLowerCase()}`,
-          source: "MDN Web Docs"
-        }
-      ],
-      milestones: [`Master ${topic.title.toLowerCase()}`, "Build advanced features", "Optimize performance"],
-      projects: [`Advanced ${topic.title} Project`]
-    };
-  }
-
-  private generateAdvancedBackendWeek(week: number): WeeklyPlan {
-    const topics = [
-      { title: "Authentication & Security", skills: ["JWT", "OAuth", "Security Best Practices"] },
-      { title: "API Design & Documentation", skills: ["REST", "GraphQL", "API Documentation"] },
-      { title: "Database Optimization", skills: ["Indexing", "Query Optimization", "Caching"] },
-      { title: "Microservices Architecture", skills: ["Service Design", "Communication", "Deployment"] },
-      { title: "Testing & Quality Assurance", skills: ["Unit Testing", "Integration Testing", "TDD"] },
-      { title: "DevOps & Deployment", skills: ["Docker", "CI/CD", "Cloud Deployment"] },
-      { title: "Performance & Scaling", skills: ["Load Balancing", "Caching", "Monitoring"] },
-      { title: "Portfolio & Job Preparation", skills: ["Portfolio Projects", "Interview Skills"] }
-    ];
-
-    const topicIndex = (week - 3) % topics.length;
-    const topic = topics[topicIndex];
-
-    return {
-      week,
-      title: topic.title,
-      description: `Advanced backend development: ${topic.title.toLowerCase()}`,
-      skills: topic.skills,
-      resources: [
-        {
-          title: `${topic.title} Guide`,
-          type: "course",
-          url: "https://nodejs.org/en/docs/",
-          duration: "5 hours",
-          description: `Comprehensive guide to ${topic.title.toLowerCase()}`,
-          source: "Node.js Docs"
-        }
-      ],
-      milestones: [`Implement ${topic.title.toLowerCase()}`, "Build scalable solutions", "Optimize performance"],
-      projects: [`${topic.title} Implementation Project`]
-    };
-  }
-
-  private generateAdvancedDataWeek(week: number): WeeklyPlan {
-    const topics = [
-      { title: "Machine Learning Basics", skills: ["Scikit-learn", "Model Training", "Evaluation"] },
-      { title: "Statistical Analysis", skills: ["Hypothesis Testing", "Statistical Models", "A/B Testing"] },
-      { title: "Advanced Visualization", skills: ["Interactive Charts", "Dashboards", "Storytelling"] },
-      { title: "Big Data Processing", skills: ["Spark", "Distributed Computing", "Data Pipelines"] },
-      { title: "Deep Learning", skills: ["Neural Networks", "TensorFlow", "PyTorch"] },
-      { title: "Data Engineering", skills: ["ETL Processes", "Data Warehousing", "Pipeline Design"] },
-      { title: "Business Intelligence", skills: ["KPI Development", "Reporting", "Business Metrics"] },
-      { title: "Portfolio & Career Prep", skills: ["Project Portfolio", "Data Science Interview Prep"] }
-    ];
-
-    const topicIndex = (week - 3) % topics.length;
-    const topic = topics[topicIndex];
-
-    return {
-      week,
-      title: topic.title,
-      description: `Advanced data science: ${topic.title.toLowerCase()}`,
-      skills: topic.skills,
-      resources: [
-        {
-          title: `${topic.title} Course`,
-          type: "course",
-          url: "https://www.kaggle.com/learn",
-          duration: "6 hours",
-          description: `Learn ${topic.title.toLowerCase()} techniques`,
-          source: "Kaggle Learn"
-        }
-      ],
-      milestones: [`Master ${topic.title.toLowerCase()}`, "Apply to real datasets", "Build predictive models"],
-      projects: [`${topic.title} Analysis Project`]
-    };
-  }
-
-  private generateAdvancedDesignWeek(week: number): WeeklyPlan {
-    const topics = [
-      { title: "User Research Methods", skills: ["User Interviews", "Surveys", "Usability Testing"] },
-      { title: "Information Architecture", skills: ["Site Mapping", "User Flows", "Navigation Design"] },
-      { title: "Interaction Design", skills: ["Micro-interactions", "Animation", "Gesture Design"] },
-      { title: "Design Systems", skills: ["Component Libraries", "Style Guides", "Design Tokens"] },
-      { title: "Accessibility Design", skills: ["WCAG Guidelines", "Inclusive Design", "Screen Readers"] },
-      { title: "Mobile Design", skills: ["Responsive Design", "Mobile Patterns", "Touch Interfaces"] },
-      { title: "Design Leadership", skills: ["Design Strategy", "Team Collaboration", "Stakeholder Management"] },
-      { title: "Portfolio & Career", skills: ["Case Studies", "Design Portfolio", "Interview Preparation"] }
-    ];
-
-    const topicIndex = (week - 3) % topics.length;
-    const topic = topics[topicIndex];
-
-    return {
-      week,
-      title: topic.title,
-      description: `Advanced UX/UI design: ${topic.title.toLowerCase()}`,
-      skills: topic.skills,
-      resources: [
-        {
-          title: `${topic.title} Masterclass`,
-          type: "course",
-          url: "https://www.interaction-design.org/",
-          duration: "5 hours",
-          description: `Advanced ${topic.title.toLowerCase()} techniques`,
-          source: "IxDF"
-        }
-      ],
-      milestones: [`Master ${topic.title.toLowerCase()}`, "Apply to real projects", "Build design expertise"],
-      projects: [`${topic.title} Design Challenge`]
-    };
-  }
-
-  private generateAdvancedGenericWeek(week: number): WeeklyPlan {
-    return {
-      week,
-      title: `Advanced Skills - Week ${week}`,
-      description: "Continuing skill development and specialization",
-      skills: ["Advanced Concepts", "Specialization", "Best Practices"],
-      resources: [
-        {
-          title: "Advanced Tutorial",
-          type: "course",
-          url: "https://www.freecodecamp.org/",
-          duration: "5 hours",
-          description: "Advanced concepts and techniques",
-          source: "freeCodeCamp"
-        }
-      ],
-      milestones: ["Master advanced concepts", "Build complex projects", "Prepare for specialization"],
-      projects: [`Week ${week} Advanced Project`]
-    };
+    return 8; // Default to 8 weeks
   }
 
   async generateCareerPath(request: CareerPathRequest): Promise<CareerPath> {
+    const { targetRole, currentSkills, experienceLevel, timeframe, interests, pace = 'normal' } = request;
+    
+    // Adjust timeframe based on pace
+    const adjustedWeeks = this.adjustTimeframeForPace(timeframe, pace);
+    
+    const prompt = `Create a comprehensive, personalized career learning path for someone who wants to become a ${targetRole}.
+
+IMPORTANT: Generate UNIQUE and SPECIFIC content based on the user's profile. Do NOT use generic templates.
+
+User Profile:
+- Target Role: ${targetRole}
+- Current Skills: ${currentSkills.join(', ')}
+- Experience Level: ${experienceLevel}
+- Desired Timeframe: ${timeframe} (${adjustedWeeks} weeks)
+- Learning Pace: ${pace}
+- Interests: ${interests.join(', ')}
+
+Generate a detailed response in JSON format with COMPLETE weekly plans for ALL ${adjustedWeeks} weeks:
+
+{
+  "title": "Unique title specific to ${targetRole} and user's background",
+  "description": "Personalized description considering user's current skills: ${currentSkills.join(', ')} and interests: ${interests.join(', ')}",
+  "duration": "${timeframe}",
+  "difficulty": "Based on experience level: ${experienceLevel}",
+  "totalWeeks": ${adjustedWeeks},
+  "prerequisites": ["Specific to ${targetRole} and ${experienceLevel} level - NOT generic"],
+  "outcomes": ["Specific outcomes for ${targetRole} considering user's interests: ${interests.join(', ')}"],
+  "skillsToLearn": ["Skills needed for ${targetRole} that user doesn't have from: ${currentSkills.join(', ')}"],
+  "marketDemand": "Current market demand for ${targetRole} with specific statistics",
+  "averageSalary": "Realistic salary range for ${targetRole}",
+  "jobTitles": ["Specific job titles related to ${targetRole}"],
+  "weeklyPlan": [
+    // Generate ${adjustedWeeks} unique weeks, each with:
+    {
+      "week": 1,
+      "title": "Week-specific title for ${targetRole}",
+      "description": "What will be learned this week specific to ${targetRole}",
+      "skills": ["Specific skills for this week"],
+      "resources": [
+        {
+          "title": "Specific resource title",
+          "type": "video|article|course|practice|project",
+          "url": "Real URL from YouTube, Coursera, freeCodeCamp, MDN, etc.",
+          "duration": "Realistic duration",
+          "description": "Specific description of what this resource covers",
+          "source": "Platform name"
+        }
+        // Include 3-5 resources per week with REAL URLs
+      ],
+      "milestones": ["Specific, measurable milestones for this week"],
+      "projects": ["Specific project for ${targetRole} - week ${1}"]
+    }
+    // Continue for all ${adjustedWeeks} weeks with DIFFERENT content each week
+  ]
+}
+
+CRITICAL REQUIREMENTS:
+1. Make prerequisites SPECIFIC to ${targetRole} and ${experienceLevel} - not generic
+2. Make outcomes SPECIFIC to ${targetRole} and user's interests
+3. Filter skillsToLearn to exclude skills user already has: ${currentSkills.join(', ')}
+4. Generate ${adjustedWeeks} COMPLETE weeks with different content
+5. Use REAL URLs from actual platforms
+6. Make each week build upon previous weeks
+7. Consider user's pace: ${pace} (adjust complexity accordingly)
+8. Include projects specific to ${targetRole}
+9. Make content relevant to user's interests: ${interests.join(', ')}`;
+
     try {
-      // Generate dynamic career path based on user input
-      const careerPath = this.generateDynamicCareerPath(request);
+      const response = await this.makeGrokRequest(prompt);
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid JSON format from response");
+
+      const careerPath: CareerPath = JSON.parse(jsonMatch[0]);
       
-      // Ensure all required fields are present
+      // Validate and ensure all required fields are present
       if (!careerPath?.title || !Array.isArray(careerPath.weeklyPlan)) {
         throw new Error("Invalid structure in career path");
       }
 
-      // Ensure each week has all required fields
-      careerPath.weeklyPlan = careerPath.weeklyPlan.map(week => ({
-        ...week,
-        skills: week.skills || [],
-        resources: week.resources || [],
-        milestones: week.milestones || [],
-        projects: week.projects || []
-      }));
+      // Enhance resources with additional platform integrations
+      for (let week of careerPath.weeklyPlan) {
+        // Add community resources and platform-specific content
+        const additionalResources = await this.getEnhancedResources(week.skills, targetRole);
+        week.resources = [...(week.resources || []), ...additionalResources];
+        
+        // Generate role-specific projects using AI/rules engine
+        if (!week.projects || week.projects.length === 0) {
+          week.projects = this.generateRoleSpecificProjects(targetRole, week.week, week.skills);
+        }
+        
+        // Ensure all required fields
+        week.skills = week.skills || [];
+        week.resources = week.resources || [];
+        week.milestones = week.milestones || [];
+        week.projects = week.projects || [];
+      }
 
       return careerPath;
     } catch (err) {
@@ -814,48 +449,54 @@ class GrokService {
     }
   }
 
+  private async getEnhancedResources(skills: string[], targetRole: string): Promise<any[]> {
+    const enhancedResources: any[] = [];
+    
+    for (const skill of skills.slice(0, 2)) { // Limit to avoid too many resources
+      try {
+        // Fetch from multiple platforms
+        const [youtube, udemy, coursera, mdn, community] = await Promise.all([
+          this.fetchYouTubeResources(skill, 'beginner'),
+          this.fetchUdemyResources(skill),
+          this.fetchCourseraResources(skill),
+          this.fetchMDNResources(skill),
+          this.fetchCommunityResources(skill)
+        ]);
+        
+        // Add one resource from each platform (if available)
+        if (youtube.length > 0) enhancedResources.push(youtube[0]);
+        if (udemy.length > 0) enhancedResources.push(udemy[0]);
+        if (mdn.length > 0) enhancedResources.push(mdn[0]);
+        if (community.length > 0) enhancedResources.push(community[0]);
+      } catch (error) {
+        console.error(`Failed to fetch resources for ${skill}:`, error);
+      }
+    }
+    
+    return enhancedResources.slice(0, 3); // Limit to 3 additional resources per week
+  }
+
   async generateResourceRecommendations(skill: string, level: string): Promise<any[]> {
     try {
-      // Return mock resources for now
-      return [
-        {
-          title: `${skill} Fundamentals`,
-          type: "course",
-          url: "https://www.freecodecamp.org/",
-          duration: "4 hours",
-          description: `Learn ${skill} from the ground up`,
-          source: "freeCodeCamp",
-          difficulty: level,
-          rating: "4.8/5"
-        },
-        {
-          title: `${skill} Tutorial`,
-          type: "video",
-          url: "https://www.youtube.com/results?search_query=" + encodeURIComponent(skill),
-          duration: "2 hours",
-          description: `Video tutorial series for ${skill}`,
-          source: "YouTube",
-          difficulty: level,
-          rating: "4.6/5"
-        },
-        {
-          title: `${skill} Documentation`,
-          type: "article",
-          url: "https://developer.mozilla.org/en-US/docs/Learn",
-          duration: "1 hour",
-          description: `Official documentation and guides for ${skill}`,
-          source: "MDN Web Docs",
-          difficulty: level,
-          rating: "4.9/5"
-        }
-      ];
+      // Get resources from multiple platforms
+      const [youtube, udemy, coursera, mdn, community] = await Promise.all([
+        this.fetchYouTubeResources(skill, level),
+        this.fetchUdemyResources(skill),
+        this.fetchCourseraResources(skill),
+        this.fetchMDNResources(skill),
+        this.fetchCommunityResources(skill)
+      ]);
+      
+      // Combine and return diverse resources
+      const allResources = [...youtube, ...udemy, ...coursera, ...mdn, ...community];
+      return allResources.slice(0, 8); // Return top 8 resources
     } catch (err) {
       console.error("Resource recommendation failed:", err);
       return [];
     }
   }
 
-  // Remove skill gap analysis implementation as requested
+  // Skill gap analysis removed as requested
   async analyzeSkillGap(currentSkills: string[], targetRole: string): Promise<any> {
     throw new Error("Skill gap analysis is not implemented yet. This feature will be available soon.");
   }

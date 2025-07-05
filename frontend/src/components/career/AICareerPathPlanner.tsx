@@ -25,7 +25,10 @@ import {
   Award,
   Calendar,
   BarChart3,
-  ArrowRight
+  ArrowRight,
+  Zap,
+  Turtle,
+  Gauge
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -41,6 +44,8 @@ interface WeeklyPlan {
     duration: string;
     description: string;
     source: string;
+    difficulty?: string;
+    rating?: string;
   }[];
   milestones: string[];
   projects: string[];
@@ -66,6 +71,7 @@ const AICareerPathPlanner: React.FC = () => {
   const { profile } = useProfileStore();
   const [targetRole, setTargetRole] = useState('');
   const [timeframe, setTimeframe] = useState('');
+  const [pace, setPace] = useState<'slow' | 'normal' | 'fast'>('normal');
   const [customSkills, setCustomSkills] = useState<string[]>([]);
   const [customInterests, setCustomInterests] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
@@ -133,6 +139,7 @@ const AICareerPathPlanner: React.FC = () => {
       const response = await api.generateCareerPath({
         targetRole,
         timeframe,
+        pace,
         customSkills,
         customInterests
       });
@@ -203,6 +210,14 @@ const AICareerPathPlanner: React.FC = () => {
     }
   };
 
+  const getPaceIcon = (paceValue: string) => {
+    switch (paceValue) {
+      case 'slow': return <Turtle className="w-4 h-4" />;
+      case 'fast': return <Zap className="w-4 h-4" />;
+      default: return <Gauge className="w-4 h-4" />;
+    }
+  };
+
   const openResource = (url: string) => {
     if (url.startsWith('http')) {
       window.open(url, '_blank');
@@ -223,7 +238,7 @@ const AICareerPathPlanner: React.FC = () => {
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">AI Career Path Planner</h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Get a personalized, AI-generated learning roadmap tailored to your goals and current skills
+          Get a personalized, AI-generated learning roadmap tailored to your goals, skills, and learning pace
         </p>
       </div>
 
@@ -255,6 +270,37 @@ const AICareerPathPlanner: React.FC = () => {
               { value: '6 months', label: '6 months (In-depth)' },
             ]}
           />
+        </div>
+
+        {/* Learning Pace */}
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Learning Pace
+          </label>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { value: 'slow', label: 'Relaxed', description: '50% more time', icon: <Turtle className="w-5 h-5" /> },
+              { value: 'normal', label: 'Normal', description: 'Standard pace', icon: <Gauge className="w-5 h-5" /> },
+              { value: 'fast', label: 'Intensive', description: '25% less time', icon: <Zap className="w-5 h-5" /> }
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setPace(option.value as 'slow' | 'normal' | 'fast')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  pace === option.value
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  {option.icon}
+                </div>
+                <div className="text-sm font-medium text-gray-900">{option.label}</div>
+                <div className="text-xs text-gray-500">{option.description}</div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Custom Skills */}
@@ -375,7 +421,7 @@ const AICareerPathPlanner: React.FC = () => {
             </div>
 
             {/* Path Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-8">
               <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
                 <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
                 <div className="text-lg font-bold text-gray-900">{generatedPath.duration}</div>
@@ -398,6 +444,12 @@ const AICareerPathPlanner: React.FC = () => {
                 <DollarSign className="w-8 h-8 text-yellow-600 mx-auto mb-3" />
                 <div className="text-lg font-bold text-gray-900">{generatedPath.averageSalary}</div>
                 <div className="text-sm text-gray-600">Avg Salary</div>
+              </div>
+
+              <div className="text-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200">
+                {getPaceIcon(pace)}
+                <div className="text-lg font-bold text-gray-900 capitalize">{pace}</div>
+                <div className="text-sm text-gray-600">Learning Pace</div>
               </div>
             </div>
 
@@ -522,8 +574,8 @@ const AICareerPathPlanner: React.FC = () => {
                     </div>
 
                     <div>
-                      <h5 className="font-medium text-gray-900 mb-2">Milestones</h5>
-                      <p className="text-sm text-gray-600">{(week.milestones || []).length} milestones to achieve</p>
+                      <h5 className="font-medium text-gray-900 mb-2">Projects</h5>
+                      <p className="text-sm text-gray-600">{(week.projects || []).length} hands-on projects</p>
                     </div>
                   </div>
                 </div>
@@ -597,13 +649,17 @@ const AICareerPathPlanner: React.FC = () => {
       {isGenerating && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 max-w-4xl mx-auto text-center">
           <LoadingSpinner size="lg" className="mb-6" />
-          <h3 className="text-2xl font-semibold text-gray-900 mb-3">Generating Your Career Path</h3>
-          <p className="text-gray-600 text-lg">Our AI is analyzing your goals and creating a personalized learning roadmap...</p>
-          <div className="mt-6 flex justify-center">
-            <div className="flex space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          <h3 className="text-2xl font-semibold text-gray-900 mb-3">Generating Your Personalized Career Path</h3>
+          <p className="text-gray-600 text-lg mb-4">
+            Our AI is analyzing your profile and creating a customized learning roadmap...
+          </p>
+          <div className="bg-gray-100 rounded-lg p-4 text-left max-w-md mx-auto">
+            <div className="text-sm text-gray-700 space-y-2">
+              <div>✓ Analyzing your current skills: {customSkills.slice(0, 3).join(', ')}</div>
+              <div>✓ Considering your interests: {customInterests.slice(0, 2).join(', ')}</div>
+              <div>✓ Tailoring content for {targetRole}</div>
+              <div>✓ Adjusting for {pace} learning pace</div>
+              <div>⏳ Generating {timeframe} learning plan...</div>
             </div>
           </div>
         </div>

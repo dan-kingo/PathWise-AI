@@ -23,7 +23,9 @@ const weeklyPlanSchema = new mongoose.Schema({
     url: String,
     duration: String,
     description: String,
-    source: String
+    source: String,
+    difficulty: String,
+    rating: String
   }],
   milestones: [String],
   projects: [String],
@@ -67,6 +69,11 @@ const careerSchema = new mongoose.Schema({
   // Generation metadata
   targetRole: String,
   timeframe: String,
+  pace: {
+    type: String,
+    enum: ['slow', 'normal', 'fast'],
+    default: 'normal'
+  },
   customSkills: [String],
   customInterests: [String],
   
