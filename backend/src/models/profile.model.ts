@@ -44,6 +44,12 @@ const profileSchema = new mongoose.Schema({
     default: null
   },
   careerPathGeneratedAt: Date,
+  skillGapAnalysis: {
+    targetRole: String,
+    analysis: mongoose.Schema.Types.Mixed,
+    completedSkills: [String],
+    analyzedAt: Date
+  },
   learningProgress: {
     currentWeek: {
       type: Number,

@@ -71,7 +71,7 @@ class GrokService {
         messages: [
           {
             role: "system",
-            content: "You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps.",
+            content: "You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps. Always provide comprehensive weekly plans with specific skills, detailed resources with real URLs, clear milestones, and practical projects.",
           },
           {
             role: "user",
@@ -94,6 +94,7 @@ class GrokService {
 
   async generateCareerPath(request: CareerPathRequest): Promise<CareerPath> {
     const prompt = `Create a comprehensive career learning path for someone who wants to become a ${request.targetRole}.
+
 Current context:
 - Target Role: ${request.targetRole}
 - Current Skills: ${request.currentSkills.join(', ')}
@@ -101,21 +102,47 @@ Current context:
 - Desired Timeframe: ${request.timeframe}
 - Interests: ${request.interests.join(', ')}
 
-Please provide a detailed response in the following JSON format:
+Please provide a detailed response in the following JSON format with COMPLETE weekly plans:
+
 {
-  "title": "...",
-  "description": "...",
-  "duration": "...",
+  "title": "Career path title",
+  "description": "Detailed description of the career path",
+  "duration": "${request.timeframe}",
   "difficulty": "Beginner|Intermediate|Advanced",
-  "totalWeeks": number,
-  "prerequisites": ["..."],
-  "outcomes": ["..."],
-  "skillsToLearn": ["..."],
-  "marketDemand": "...",
-  "averageSalary": "...",
-  "jobTitles": ["..."],
-  "weeklyPlan": [ { ... } ]
-}`;
+  "totalWeeks": number_of_weeks,
+  "prerequisites": ["prerequisite1", "prerequisite2"],
+  "outcomes": ["outcome1", "outcome2", "outcome3"],
+  "skillsToLearn": ["skill1", "skill2", "skill3"],
+  "marketDemand": "High demand with X% growth expected",
+  "averageSalary": "$XX,000 - $XX,000",
+  "jobTitles": ["title1", "title2", "title3"],
+  "weeklyPlan": [
+    {
+      "week": 1,
+      "title": "Week title",
+      "description": "What will be learned this week",
+      "skills": ["skill1", "skill2"],
+      "resources": [
+        {
+          "title": "Resource title",
+          "type": "video|article|course|practice|project",
+          "url": "https://real-url.com",
+          "duration": "X hours",
+          "description": "What this resource covers",
+          "source": "Platform name"
+        }
+      ],
+      "milestones": ["milestone1", "milestone2"],
+      "projects": ["project1", "project2"]
+    }
+  ]
+}
+
+IMPORTANT: 
+- Provide REAL URLs for resources (YouTube, Coursera, freeCodeCamp, MDN, etc.)
+- Include 3-5 resources per week
+- Make sure each week has specific skills, milestones, and projects
+- Ensure the weekly plan covers the full timeframe requested`;
 
     try {
       const response = await this.makeGrokRequest(prompt);
@@ -123,9 +150,20 @@ Please provide a detailed response in the following JSON format:
       if (!jsonMatch) throw new Error("Invalid JSON format from response");
 
       const careerPath: CareerPath = JSON.parse(jsonMatch[0]);
+      
+      // Validate and ensure all required fields are present
       if (!careerPath?.title || !Array.isArray(careerPath.weeklyPlan)) {
         throw new Error("Invalid structure in career path");
       }
+
+      // Ensure each week has all required fields
+      careerPath.weeklyPlan = careerPath.weeklyPlan.map(week => ({
+        ...week,
+        skills: week.skills || [],
+        resources: week.resources || [],
+        milestones: week.milestones || [],
+        projects: week.projects || []
+      }));
 
       return careerPath;
     } catch (err) {
@@ -136,19 +174,28 @@ Please provide a detailed response in the following JSON format:
 
   async generateResourceRecommendations(skill: string, level: string): Promise<any[]> {
     const prompt = `Find the best learning resources for "${skill}" at ${level} level.
-Return a JSON array of up to 8 items. Format:
+Return a JSON array of up to 8 items with REAL URLs. Format:
 [
   {
-    "title": "...",
-    "type": "...",
-    "url": "...",
-    "duration": "...",
-    "description": "...",
-    "source": "...",
-    "difficulty": "...",
-    "rating": "..."
+    "title": "Resource title",
+    "type": "video|article|course|practice",
+    "url": "https://real-url.com",
+    "duration": "X hours/minutes",
+    "description": "What this resource covers",
+    "source": "Platform name",
+    "difficulty": "Beginner|Intermediate|Advanced",
+    "rating": "X.X/5"
   }
-]`;
+]
+
+Provide REAL URLs from platforms like:
+- YouTube (specific video URLs)
+- Coursera, Udemy, edX courses
+- freeCodeCamp
+- MDN Web Docs
+- Official documentation
+- GitHub repositories
+- Interactive coding platforms`;
 
     try {
       const response = await this.makeGrokRequest(prompt);
@@ -162,21 +209,29 @@ Return a JSON array of up to 8 items. Format:
 
   async analyzeSkillGap(currentSkills: string[], targetRole: string): Promise<any> {
     const prompt = `Analyze the skill gap for someone with skills: ${currentSkills.join(', ')} who wants to become a ${targetRole}.
-Respond in JSON:
+
+Provide a comprehensive analysis in JSON format:
 {
-  "missingSkills": [...],
-  "skillsToImprove": [...],
-  "strongSkills": [...],
+  "missingSkills": ["skill1", "skill2", "skill3"],
+  "skillsToImprove": ["skill1", "skill2"],
+  "strongSkills": ["skill1", "skill2"],
   "learningPriority": [
     {
-      "skill": "...",
+      "skill": "Skill name",
       "priority": "High|Medium|Low",
-      "reason": "...",
-      "timeToLearn": "..."
+      "reason": "Why this skill is important",
+      "timeToLearn": "X weeks/months"
     }
   ],
-  "recommendations": "..."
-}`;
+  "recommendations": "Detailed paragraph with specific advice on learning path and strategy"
+}
+
+Focus on:
+- Technical skills specific to ${targetRole}
+- Soft skills needed for the role
+- Industry-specific knowledge
+- Tools and technologies
+- Certifications that might be valuable`;
 
     try {
       const response = await this.makeGrokRequest(prompt);

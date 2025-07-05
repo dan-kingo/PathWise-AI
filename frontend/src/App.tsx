@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
+import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import AuthCallback from './components/AuthCallback';
@@ -44,6 +45,10 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route 
+        path="/" 
+        element={<LandingPage />} 
+      />
+      <Route 
         path="/login" 
         element={
           <PublicRoute>
@@ -85,8 +90,7 @@ const AppRoutes: React.FC = () => {
       />
       <Route path="/auth/success" element={<AuthCallback />} />
       <Route path="/auth/error" element={<AuthCallback />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
