@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: function() {
+    required: function (this: mongoose.Document & { googleId?: string }) {
       return !this.googleId; // Password required only for email auth
     }
   },

@@ -62,7 +62,7 @@ router.post('/signup', authLimiter, async (req, res) => {
       // Don't fail the signup if email fails
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Account created successfully. Please check your email to verify your account.',
       user: {
@@ -74,7 +74,7 @@ router.post('/signup', authLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error('Signup error:', error);
-    res.status(500).json({ message: 'Server error during signup' });
+    return res.status(500).json({ message: 'Server error during signup' });
   }
 });
 
@@ -124,7 +124,7 @@ router.post('/login', authLimiter, async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Login successful',
       token,
@@ -139,7 +139,7 @@ router.post('/login', authLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    return res.status(500).json({ message: 'Server error during login' });
   }
 });
 
@@ -166,13 +166,13 @@ router.post('/verify-email', async (req, res) => {
     user.emailVerificationExpires = undefined;
     await user.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Email verified successfully'
     });
   } catch (error) {
     console.error('Email verification error:', error);
-    res.status(500).json({ message: 'Server error during email verification' });
+    return res.status(500).json({ message: 'Server error during email verification' });
   }
 });
 
@@ -206,13 +206,13 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
       return res.status(500).json({ message: 'Failed to send verification email' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Verification email sent successfully'
     });
   } catch (error) {
     console.error('Resend verification error:', error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -246,13 +246,13 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
       return res.status(500).json({ message: 'Failed to send password reset email' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'If an account with that email exists, we have sent a password reset link.'
     });
   } catch (error) {
     console.error('Forgot password error:', error);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -283,13 +283,13 @@ router.post('/reset-password', authLimiter, async (req, res) => {
     user.passwordResetExpires = undefined;
     await user.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Password reset successfully'
     });
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(500).json({ message: 'Server error during password reset' });
+    return res.status(500).json({ message: 'Server error during password reset' });
   }
 });
 
@@ -321,13 +321,13 @@ router.post('/change-password', authenticate, async (req, res) => {
     user.password = newPassword;
     await user.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Password changed successfully'
     });
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(500).json({ message: 'Server error during password change' });
+    return res.status(500).json({ message: 'Server error during password change' });
   }
 });
 

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Create transporter (using Gmail for demo - replace with your email service)
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransporter({
 // For development, you can use Ethereal Email for testing
 const createTestTransporter = async () => {
   const testAccount = await nodemailer.createTestAccount();
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
     secure: false,
