@@ -13,6 +13,7 @@ import authRoutes from "./routes/auth.route.js";
 import profileRoutes from "./routes/profile.route.js";
 import careerRoutes from "./routes/career.route.js";
 import profileReviewerRoutes from "./routes/profileReviewer.route.js";
+import resumeReviewerRoutes from "./routes/resumeReviewer.route.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 dotenv.config();
@@ -77,6 +78,7 @@ app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
 app.use('/career', careerRoutes);
 app.use('/profile-reviewer', profileReviewerRoutes);
+app.use('/resume-reviewer', resumeReviewerRoutes);
 
 // Health check
 app.get("/", (_req: Request, res: Response) => {
@@ -117,6 +119,16 @@ app.get("/", (_req: Request, res: Response) => {
         deleteReview: "DELETE /profile-reviewer/reviews/:reviewId",
         updateNotes: "PUT /profile-reviewer/reviews/:reviewId/notes",
         getInsights: "GET /profile-reviewer/insights"
+      },
+      resumeReviewer: {
+        analyze: "POST /resume-reviewer/analyze",
+        reanalyze: "POST /resume-reviewer/reanalyze/:reviewId",
+        getReviews: "GET /resume-reviewer/reviews",
+        getReview: "GET /resume-reviewer/reviews/:reviewId",
+        updateReview: "PUT /resume-reviewer/reviews/:reviewId",
+        deleteReview: "DELETE /resume-reviewer/reviews/:reviewId",
+        downloadResume: "GET /resume-reviewer/reviews/:reviewId/download",
+        getInsights: "GET /resume-reviewer/insights"
       }
     }
   });
