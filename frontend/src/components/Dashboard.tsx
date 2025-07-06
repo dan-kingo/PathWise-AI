@@ -10,25 +10,22 @@ import {
   User, 
   Target, 
   BookOpen, 
-  Settings, 
   LogOut, 
   Sparkles,
   TrendingUp,
-  Clock,
   Award,
   CheckCircle,
   ArrowRight,
   BarChart3,
-  Calendar,
-  Star,
   Search,
-  Eye
+  FileText
 } from 'lucide-react';
+import ResumeReviewer from './resume/resumeReviewer';
 
 const Dashboard: React.FC = () => {
   const { user, logout, loading } = useAuthStore();
   const { profile, isProfileComplete, checkProfileStatus, fetchProfile } = useProfileStore();
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'career' | 'profile-reviewer' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'career' | 'profile-reviewer' | 'resume-reviewer'>('overview');
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -87,8 +84,8 @@ const Dashboard: React.FC = () => {
     { id: 'overview', name: 'Overview', icon: BarChart3 },
     { id: 'career', name: 'AI Career Planner', icon: Sparkles },
     { id: 'profile-reviewer', name: 'Profile Reviewer', icon: Search },
+    { id: 'resume-reviewer', name: 'Resume Reviewer', icon: FileText },
     { id: 'profile', name: 'Profile', icon: User },
-    { id: 'settings', name: 'Settings', icon: Settings },
   ];
 
   const quickStats = [
@@ -149,9 +146,7 @@ const Dashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-sparkles w-6 h-6 text-white" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg></div>
               <span className="ml-3 text-xl font-bold text-gray-900">Job Ready AI Coach</span>
             </div>
             
@@ -308,17 +303,17 @@ const Dashboard: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab('career')}
+                      onClick={() => setActiveTab('resume-reviewer')}
                       className="p-6 border border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all group text-left"
                     >
                       <div className="flex items-center mb-3">
                         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                          <TrendingUp className="w-5 h-5 text-green-600" />
+                          <FileText className="w-5 h-5 text-green-600" />
                         </div>
                         <ArrowRight className="w-4 h-4 text-gray-400 ml-auto group-hover:text-green-600 transition-colors" />
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Analyze Skill Gap</h3>
-                      <p className="text-sm text-gray-600">Identify skills you need to reach your target role</p>
+                      <h3 className="font-semibold text-gray-900 mb-1">AI Resume Reviewer</h3>
+                      <p className="text-sm text-gray-600">Get comprehensive AI analysis of your resume and CV</p>
                     </button>
 
                     <button
@@ -386,6 +381,7 @@ const Dashboard: React.FC = () => {
 
         {activeTab === 'career' && <AICareerPathPlanner />}
         {activeTab === 'profile-reviewer' && <ProfileReviewer />}
+        {activeTab === 'resume-reviewer' && <ResumeReviewer />}
 
         {activeTab === 'profile' && (
           <div className="space-y-6">
@@ -468,56 +464,6 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-              <p className="text-gray-600">Manage your account preferences</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Account Settings</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Email Notifications</h3>
-                    <p className="text-sm text-gray-600">Receive updates about your learning progress</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Weekly Progress Reports</h3>
-                    <p className="text-sm text-gray-600">Get weekly summaries of your learning activity</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Privacy & Security</h2>
-              <div className="space-y-4">
-                <Button variant="outline" className="w-full justify-start">
-                  Change Password
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  Download My Data
-                </Button>
-                <Button variant="outline" className="w-full justify-start text-red-600 border-red-300 hover:bg-red-50">
-                  Delete Account
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

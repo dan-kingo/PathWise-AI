@@ -607,6 +607,186 @@ export const api = {
     return result;
   },
 
+  // Resume Reviewer API methods
+  analyzeResume: async (formData: FormData) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/resume-reviewer/analyze`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to analyze resume');
+    }
+
+    return result;
+  },
+
+  getResumeReviews: async (status?: string, limit?: number, page?: number) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append('status', status);
+    if (limit) queryParams.append('limit', limit.toString());
+    if (page) queryParams.append('page', page.toString());
+
+    const response = await fetch(`${API_BASE_URL}/resume-reviewer/reviews?${queryParams}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to get resume reviews');
+    }
+
+    return result;
+  },
+
+  getResumeReview: async (reviewId: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/resume-reviewer/reviews/${reviewId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to get resume review');
+    }
+
+    return result;
+  },
+
+  updateResumeReview: async (reviewId: string, updateData: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/resume-reviewer/reviews/${reviewId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateData),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to update resume review');
+    }
+
+    return result;
+  },
+
+  deleteResumeReview: async (reviewId: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/resume-reviewer/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to delete resume review');
+    }
+
+    return result;
+  },
+
+  getResumeInsights: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/resume-reviewer/insights`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to get resume insights');
+    }
+
+    return result;
+  },
+
+  reanalyzeResume: async (reviewId: string, updateData: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/resume-reviewer/reanalyze/${reviewId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateData),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to reanalyze resume');
+    }
+
+    return result;
+  },
+
   // Legacy methods for backward compatibility
   saveCareerPath: async (careerPath: any) => {
     const token = localStorage.getItem('auth_token');

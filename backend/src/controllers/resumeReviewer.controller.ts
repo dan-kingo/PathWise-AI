@@ -7,20 +7,16 @@ import ResumeParserService from '../services/resumeParser.service.js';
 import ResumeAnalyzerService from '../services/resumeAnalyzer.service.js';
 // Update your imports to include the proper types
 import { Types } from 'mongoose';
-import ResumeReview, { 
-  IResumeReview, 
-  IResumeAnalysis,
-  ISectionAnalysis,
-  ISkillAnalysis
-} from '../models/resumeReview.model';
+import ResumeReview from '../models/resumeReview.model';
 
-// Create a utility function to convert plain objects to Mongoose subdocuments
-function toSubdocument<T>(schemaPath: string, data: T): T & Types.Subdocument {
-  const schemaType = ResumeReview.schema.path(schemaPath);
-  // Use the 'cast' method to create a subdocument instance
-  return schemaType.cast(data) as T & Types.Subdocument;
+// Utility function to properly create subdocuments
+function createSubdocumentArray<T>(parentDoc: any, path: string, items: T[]): Types.DocumentArray<T> {
+  const schemaType = parentDoc.schema.path(path);
+  if (!schemaType) {
+    throw new Error(`Schema path ${path} not found`);
+  }
+  return new Types.DocumentArray(items.map(item => new schemaType.casterConstructor(item)));
 }
-
 // Configure multer for resume uploads
 const upload = multer({
   storage: resumeStorage,
@@ -57,7 +53,7 @@ export const analyzeResume = async (req: Request, res: Response) => {
       });
     }
 
-    const file = req.file as any;
+    const file = req.file as Express.Multer.File;
     const fileExtension = path.extname(file.originalname).toLowerCase().substring(1);
 
     // Create initial resume review record
@@ -67,13 +63,13 @@ export const analyzeResume = async (req: Request, res: Response) => {
       fileUrl: file.path,
       fileType: fileExtension,
       fileSize: file.size,
-      cloudinaryPublicId: file.filename,
+      cloudinaryPublicId: (file as any).filename, // Cloudinary specific
       targetRole,
       targetIndustry,
       experienceLevel: experienceLevel || 'mid',
       additionalContext,
       extractedText: '',
-      analysisResult: {} as any,
+      analysisResult: {} as any, // Temporary, will be updated
       analysisStatus: 'processing'
     });
 
@@ -102,31 +98,30 @@ export const analyzeResume = async (req: Request, res: Response) => {
         fileType: fileExtension
       });
 
-        // After getting analysisResult from ResumeAnalyzerService
-    const convertedResult = {
-      ...analysisResult,
-      sectionAnalysis: analysisResult.sectionAnalysis.map((section: ISectionAnalysis) => 
-        toSubdocument('analysisResult.sectionAnalysis', section)
-      ),
-      skillsAnalysis: {
-        ...analysisResult.skillsAnalysis,
-        identifiedSkills: analysisResult.skillsAnalysis.identifiedSkills.map((skill: ISkillAnalysis) =>
-          toSubdocument('analysisResult.skillsAnalysis.identifiedSkills', skill)
-        )
-      }
-    };
-
+      // Convert the analysis result to proper Mongoose document format
+      const convertedResult = {
+        ...analysisResult,
+        sectionAnalysis: createSubdocumentArray(
+          resumeReview, 
+          'analysisResult.sectionAnalysis', 
+          analysisResult.sectionAnalysis
+        ),
+        skillsAnalysis: {
+          ...analysisResult.skillsAnalysis,
+          identifiedSkills: createSubdocumentArray(
+            resumeReview,
+            'analysisResult.skillsAnalysis.identifiedSkills',
+            analysisResult.skillsAnalysis.identifiedSkills
+          )
+        }
+      };
 
       // Update with analysis results
-    // Convert sectionAnalysis to DocumentArray using the schema's create method
-    if (Array.isArray(convertedResult.sectionAnalysis) && ResumeReview.schema.path('analysisResult.sectionAnalysis')) {
-      // @ts-ignore
-      convertedResult.sectionAnalysis = (resumeReview as any).analysisResult.create(convertedResult.sectionAnalysis);
-    }
-    resumeReview.analysisResult = convertedResult as IResumeAnalysis;
-    resumeReview.analysisStatus = 'completed';
-    resumeReview.processingTime = Date.now() - startTime;
-    await resumeReview.save();
+      resumeReview.analysisResult = convertedResult;
+      resumeReview.analysisStatus = 'completed';
+      const processingTime = Date.now() - startTime;
+      resumeReview.processingTime = processingTime;
+      await resumeReview.save();
 
       // Clean up temporary file if it exists locally
       if (fs.existsSync(file.path)) {
@@ -163,7 +158,6 @@ export const analyzeResume = async (req: Request, res: Response) => {
     });
   }
 };
-
 export const getResumeReviews = async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any).id;
