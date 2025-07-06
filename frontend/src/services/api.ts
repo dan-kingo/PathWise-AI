@@ -134,6 +134,10 @@ export const api = {
     const data = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(data.message || 'Password change failed');
     }
 

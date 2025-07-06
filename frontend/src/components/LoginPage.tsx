@@ -13,10 +13,11 @@ import toast from 'react-hot-toast';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, loading } = useAuthStore();
+  const { login, loading: globalLoading } = useAuthStore();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check for error in URL params
   React.useEffect(() => {
@@ -29,7 +30,7 @@ const LoginPage: React.FC = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
     watch
   } = useForm<AuthFormData>({
@@ -45,6 +46,7 @@ const LoginPage: React.FC = () => {
   const password = watch('password');
 
   const onSubmit = async (data: AuthFormData) => {
+    setIsSubmitting(true);
     try {
       if (isSignUp) {
         await login('email-signup', {
@@ -71,6 +73,8 @@ const LoginPage: React.FC = () => {
       } else {
         toast.error(error.message || 'An error occurred during authentication');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -87,7 +91,8 @@ const LoginPage: React.FC = () => {
     navigate('/forgot-password');
   };
 
-  if (loading) {
+  // Show global loading spinner only during initial auth check
+  if (globalLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <LoadingSpinner size="lg" />
@@ -121,6 +126,7 @@ const LoginPage: React.FC = () => {
                 placeholder="Enter your full name"
                 error={errors.name?.message}
                 icon={<User className="w-5 h-5 text-gray-400" />}
+                disabled={isSubmitting}
               />
             )}
 
@@ -131,6 +137,7 @@ const LoginPage: React.FC = () => {
               placeholder="Enter your email"
               error={errors.email?.message}
               icon={<Mail className="w-5 h-5 text-gray-400" />}
+              disabled={isSubmitting}
             />
 
             <div className="relative">
@@ -141,11 +148,13 @@ const LoginPage: React.FC = () => {
                 placeholder="Enter your password"
                 error={errors.password?.message}
                 icon={<Lock className="w-5 h-5 text-gray-400" />}
+                disabled={isSubmitting}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                disabled={isSubmitting}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -160,11 +169,13 @@ const LoginPage: React.FC = () => {
                   placeholder="Confirm your password"
                   error={errors.confirmPassword?.message}
                   icon={<Lock className="w-5 h-5 text-gray-400" />}
+                  disabled={isSubmitting}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                  disabled={isSubmitting}
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -196,6 +207,7 @@ const LoginPage: React.FC = () => {
               variant="secondary"
               className="w-full mt-4"
               onClick={handleGoogleLogin}
+              disabled={isSubmitting}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -211,7 +223,8 @@ const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={toggleMode}
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors disabled:opacity-50"
+              disabled={isSubmitting}
             >
               {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>
@@ -222,7 +235,8 @@ const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+                disabled={isSubmitting}
               >
                 Forgot your password?
               </button>

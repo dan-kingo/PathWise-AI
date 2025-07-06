@@ -67,28 +67,26 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        set({ loading: true });
+        // Don't set global loading for login - this will be handled by form components
         try {
           let response;
           if (provider === 'email-signup') {
             response = await api.signup(data.email, data.password, data.name);
             if (response.success) {
               // Don't set user for signup, just return success
-              set({ loading: false });
               return;
             }
           } else if (provider === 'email-login') {
             response = await api.login(data.email, data.password);
             if (response.success && response.token) {
               localStorage.setItem('auth_token', response.token);
-              set({ user: response.user, isAuthenticated: true, loading: false });
+              set({ user: response.user, isAuthenticated: true });
               return;
             }
           }
           
           throw new Error(response?.message || 'Authentication failed');
         } catch (error: any) {
-          set({ loading: false });
           // Re-throw the error with additional properties if they exist
           const authError = new Error(error.message || 'Authentication failed');
           (authError as any).needsVerification = error.needsVerification;

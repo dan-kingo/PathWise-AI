@@ -8,7 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, icon, type, ...props }, ref) => {
+  ({ className, label, error, icon, type, disabled, ...props }, ref) => {
     return (
       <div className="space-y-2">
         {label && (
@@ -28,8 +28,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors",
               icon && "pl-10",
               error && "border-red-300 focus:ring-red-500",
+              disabled && "bg-gray-50 cursor-not-allowed opacity-75",
               className
             )}
+            disabled={disabled}
             ref={ref}
             {...props}
           />
