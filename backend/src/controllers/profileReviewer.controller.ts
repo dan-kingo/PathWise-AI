@@ -7,6 +7,30 @@ interface ProfileAnalysisRequest {
   profileUrl: string;
   profileType: 'linkedin' | 'github';
   additionalContext?: string;
+  // LinkedIn specific data
+  linkedinData?: {
+    headline?: string;
+    summary?: string;
+    experience?: Array<{
+      title: string;
+      company: string;
+      duration: string;
+      description?: string;
+    }>;
+    education?: Array<{
+      school: string;
+      degree: string;
+      field: string;
+      year?: string;
+    }>;
+    skills?: string[];
+    recommendations?: number;
+    connections?: string;
+    posts?: Array<{
+      content: string;
+      engagement: number;
+    }>;
+  };
 }
 
 interface ProfileAnalysisResult {
@@ -35,7 +59,7 @@ interface ProfileAnalysisResult {
 export const analyzeProfile = async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any).id;
-    const { profileUrl, profileType, additionalContext }: ProfileAnalysisRequest = req.body;
+    const { profileUrl, profileType, additionalContext, linkedinData }: ProfileAnalysisRequest = req.body;
 
     // Validation
     if (!profileUrl || !profileType) {
@@ -64,11 +88,46 @@ export const analyzeProfile = async (req: Request, res: Response) => {
       });
     }
 
+    // For LinkedIn, require additional data
+    if (profileType === 'linkedin') {
+      if (!linkedinData || Object.keys(linkedinData).length === 0) {
+        return res.status(400).json({
+          message: 'LinkedIn profile analysis requires additional profile information',
+          requiresLinkedInData: true,
+          requiredFields: [
+            'headline',
+            'summary', 
+            'experience',
+            'education',
+            'skills',
+            'recommendations',
+            'connections'
+          ]
+        });
+      }
+
+      // Validate required LinkedIn fields
+      const missingFields = [];
+      if (!linkedinData.headline) missingFields.push('headline');
+      if (!linkedinData.summary) missingFields.push('summary');
+      if (!linkedinData.experience || linkedinData.experience.length === 0) missingFields.push('experience');
+      if (!linkedinData.skills || linkedinData.skills.length === 0) missingFields.push('skills');
+
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          message: `Missing required LinkedIn profile information: ${missingFields.join(', ')}`,
+          missingFields,
+          requiresLinkedInData: true
+        });
+      }
+    }
+
     // Generate AI analysis
     const analysisResult = await GrokService.analyzeProfile({
       profileUrl,
       profileType,
-      additionalContext
+      additionalContext,
+      linkedinData
     });
 
     // Save analysis to database
@@ -78,6 +137,7 @@ export const analyzeProfile = async (req: Request, res: Response) => {
         profileType,
         analysisResult,
         additionalContext,
+        linkedinData: profileType === 'linkedin' ? linkedinData : undefined,
         analyzedAt: new Date(),
         lastUpdated: new Date()
       },
@@ -96,6 +156,23 @@ export const analyzeProfile = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Profile analysis error:', error);
+    
+    // Handle specific GitHub API errors
+    if (error.message.includes('GitHub API error')) {
+      return res.status(400).json({
+        message: 'Unable to access GitHub profile. Please ensure the profile is public and the username is correct.',
+        error: error.message
+      });
+    }
+    
+    // Handle LinkedIn data requirement errors
+    if (error.message.includes('LinkedIn profile analysis requires')) {
+      return res.status(400).json({
+        message: error.message,
+        requiresLinkedInData: true
+      });
+    }
+    
     return res.status(500).json({ 
       message: 'Failed to analyze profile',
       error: error instanceof Error ? error.message : 'Unknown error'

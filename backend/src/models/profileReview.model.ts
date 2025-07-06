@@ -59,6 +59,37 @@ const analysisResultSchema = new mongoose.Schema({
   actionPlan: actionPlanSchema
 });
 
+// LinkedIn specific data schema
+const linkedinExperienceSchema = new mongoose.Schema({
+  title: String,
+  company: String,
+  duration: String,
+  description: String
+});
+
+const linkedinEducationSchema = new mongoose.Schema({
+  school: String,
+  degree: String,
+  field: String,
+  year: String
+});
+
+const linkedinPostSchema = new mongoose.Schema({
+  content: String,
+  engagement: Number
+});
+
+const linkedinDataSchema = new mongoose.Schema({
+  headline: String,
+  summary: String,
+  experience: [linkedinExperienceSchema],
+  education: [linkedinEducationSchema],
+  skills: [String],
+  recommendations: Number,
+  connections: String,
+  posts: [linkedinPostSchema]
+});
+
 const profileReviewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -79,6 +110,7 @@ const profileReviewSchema = new mongoose.Schema({
     required: true
   },
   additionalContext: String,
+  linkedinData: linkedinDataSchema, // Only populated for LinkedIn profiles
   notes: String,
   completedSuggestions: [String],
   analyzedAt: {

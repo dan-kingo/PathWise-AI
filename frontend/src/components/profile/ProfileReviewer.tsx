@@ -5,6 +5,7 @@ import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Textarea from '../ui/Textarea';
 import LoadingSpinner from '../LoadingSpinner';
+import LinkedInDataForm from './LinkedInDataForm';
 import { 
   Search, 
   ExternalLink, 
@@ -28,7 +29,9 @@ import {
   Flag,
   Calendar,
   Users,
-  Zap
+  Zap,
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -61,6 +64,7 @@ interface ProfileReview {
   profileType: 'linkedin' | 'github';
   analysisResult: ProfileAnalysis;
   additionalContext?: string;
+  linkedinData?: any;
   notes?: string;
   completedSuggestions?: string[];
   analyzedAt: string;
@@ -82,10 +86,36 @@ interface ProfileInsights {
   completionRate: number;
 }
 
+interface LinkedInData {
+  headline?: string;
+  summary?: string;
+  experience?: Array<{
+    title: string;
+    company: string;
+    duration: string;
+    description?: string;
+  }>;
+  education?: Array<{
+    school: string;
+    degree: string;
+    field: string;
+    year?: string;
+  }>;
+  skills?: string[];
+  recommendations?: number;
+  connections?: string;
+  posts?: Array<{
+    content: string;
+    engagement: number;
+  }>;
+}
+
 const ProfileReviewer: React.FC = () => {
   const [profileUrl, setProfileUrl] = useState('');
   const [profileType, setProfileType] = useState<'linkedin' | 'github'>('linkedin');
   const [additionalContext, setAdditionalContext] = useState('');
+  const [linkedinData, setLinkedinData] = useState<LinkedInData>({});
+  const [showLinkedInForm, setShowLinkedInForm] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<ProfileAnalysis | null>(null);
   const [reviews, setReviews] = useState<ProfileReview[]>([]);
@@ -101,6 +131,14 @@ const ProfileReviewer: React.FC = () => {
     loadReviews();
     loadInsights();
   }, []);
+
+  useEffect(() => {
+    // Reset LinkedIn data when switching profile types
+    if (profileType === 'github') {
+      setShowLinkedInForm(false);
+      setLinkedinData({});
+    }
+  }, [profileType]);
 
   const loadReviews = async () => {
     try {
@@ -149,9 +187,36 @@ const ProfileReviewer: React.FC = () => {
       return;
     }
 
+    // For LinkedIn, check if we have required data
+    if (profileType === 'linkedin') {
+      const hasRequiredData = linkedinData.headline && 
+                             linkedinData.summary && 
+                             linkedinData.experience && 
+                             linkedinData.experience.length > 0 &&
+                             linkedinData.skills && 
+                             linkedinData.skills.length > 0;
+
+      if (!hasRequiredData) {
+        setShowLinkedInForm(true);
+        toast.error('LinkedIn analysis requires additional profile information. Please fill out the form below.');
+        return;
+      }
+    }
+
     setIsAnalyzing(true);
     try {
-      const response = await api.analyzeProfile(profileUrl, profileType, additionalContext);
+      const requestData: any = {
+        profileUrl,
+        profileType,
+        additionalContext
+      };
+
+      if (profileType === 'linkedin') {
+        requestData.linkedinData = linkedinData;
+      }
+
+      const response = await api.analyzeProfile(requestData.profileUrl, requestData.profileType, requestData.additionalContext, requestData.linkedinData);
+      
       if (response.success) {
         setCurrentAnalysis(response.analysis);
         toast.success('Profile analysis completed!');
@@ -163,9 +228,20 @@ const ProfileReviewer: React.FC = () => {
         // Clear form
         setProfileUrl('');
         setAdditionalContext('');
+        setLinkedinData({});
+        setShowLinkedInForm(false);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to analyze profile');
+      console.error('Analysis error:', error);
+      
+      if (error.requiresLinkedInData) {
+        setShowLinkedInForm(true);
+        toast.error('LinkedIn analysis requires additional profile information. Please fill out the form below.');
+      } else if (error.message.includes('GitHub')) {
+        toast.error('Unable to access GitHub profile. Please ensure the profile is public and the username is correct.');
+      } else {
+        toast.error(error.message || 'Failed to analyze profile');
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -497,6 +573,24 @@ const ProfileReviewer: React.FC = () => {
                 />
               </div>
 
+              {/* Profile Type Information */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <Info className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-blue-900 mb-1">
+                      {profileType === 'github' ? 'GitHub Analysis' : 'LinkedIn Analysis'}
+                    </h4>
+                    <p className="text-blue-800 text-sm">
+                      {profileType === 'github' 
+                        ? 'We\'ll analyze your public GitHub profile including repositories, activity, and code quality automatically.'
+                        : 'LinkedIn analysis requires additional profile information to provide accurate insights. You\'ll need to provide details about your experience, skills, and other profile sections.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Textarea
                 label="Additional Context (Optional)"
                 value={additionalContext}
@@ -517,6 +611,46 @@ const ProfileReviewer: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* LinkedIn Data Form */}
+          {showLinkedInForm && profileType === 'linkedin' && (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <Linkedin className="w-6 h-6 mr-3 text-blue-600" />
+                  <h2 className="text-2xl font-semibold text-gray-900">LinkedIn Profile Information</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowLinkedInForm(false)}
+                  icon={<X className="w-5 h-5" />}
+                >
+                  Cancel
+                </Button>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <AlertCircle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-yellow-900 mb-1">Why do we need this information?</h4>
+                    <p className="text-yellow-800 text-sm">
+                      LinkedIn profiles are not publicly accessible via API. To provide accurate analysis, we need you to manually provide key information from your LinkedIn profile. This data is only used for analysis and is stored securely.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <LinkedInDataForm
+                data={linkedinData}
+                onChange={setLinkedinData}
+                onSubmit={() => {
+                  setShowLinkedInForm(false);
+                  analyzeProfile();
+                }}
+              />
+            </div>
+          )}
 
           {/* Current Analysis Results */}
           {currentAnalysis && (

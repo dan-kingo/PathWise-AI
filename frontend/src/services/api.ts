@@ -445,9 +445,15 @@ export const api = {
   },
 
   // Profile Reviewer API methods
-  analyzeProfile: async (profileUrl: string, profileType: 'linkedin' | 'github', additionalContext?: string) => {
+  analyzeProfile: async (profileUrl: string, profileType: 'linkedin' | 'github', additionalContext?: string, linkedinData?: any) => {
     const token = localStorage.getItem('auth_token');
     if (!token) throw new Error('No token found');
+
+    const requestBody: any = { profileUrl, profileType, additionalContext };
+    
+    if (profileType === 'linkedin' && linkedinData) {
+      requestBody.linkedinData = linkedinData;
+    }
 
     const response = await fetch(`${API_BASE_URL}/profile-reviewer/analyze`, {
       method: 'POST',
@@ -455,7 +461,7 @@ export const api = {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ profileUrl, profileType, additionalContext }),
+      body: JSON.stringify(requestBody),
     });
 
     const result = await response.json();
@@ -465,7 +471,13 @@ export const api = {
         localStorage.removeItem('auth_token');
         throw new Error('Session expired');
       }
-      throw new Error(result.message || 'Failed to analyze profile');
+      
+      // Handle specific error cases
+      const error = new Error(result.message || 'Failed to analyze profile');
+      (error as any).requiresLinkedInData = result.requiresLinkedInData;
+      (error as any).missingFields = result.missingFields;
+      (error as any).requiredFields = result.requiredFields;
+      throw error;
     }
 
     return result;
