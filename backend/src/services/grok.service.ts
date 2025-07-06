@@ -31,8 +31,11 @@ interface WeeklyPlan {
   week: number;
   title: string;
   description: string;
-  skills: string[];
-  resources: {
+  focus?: string;
+  goals?: string[];
+  tasks?: string[];
+  skills?: string[];
+  resources?: {
     title: string;
     type: 'video' | 'article' | 'course' | 'practice' | 'project';
     url: string;
@@ -42,8 +45,10 @@ interface WeeklyPlan {
     difficulty?: string;
     rating?: string;
   }[];
-  milestones: string[];
-  projects: string[];
+  milestones?: string[];
+  projects?: string[];
+  project?: string;
+  hours?: number;
 }
 
 interface CareerPath {
@@ -103,14 +108,14 @@ class GrokService {
         messages: [
           {
             role: "system",
-            content: "You are an expert career advisor and profile optimization specialist. You analyze professional profiles (LinkedIn/GitHub) and provide actionable insights to improve visibility, professionalism, and career prospects. Always provide specific, measurable recommendations with clear impact explanations.",
+            content: "You are an expert career advisor and profile optimization specialist. You analyze professional profiles (LinkedIn/GitHub) and provide actionable insights to improve visibility, professionalism, and career prospects. Always provide specific, measurable recommendations with clear impact explanations. IMPORTANT: Always return valid JSON format without any markdown formatting or extra text.",
           },
           {
             role: "user",
             content: prompt,
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7, // Reduced for more consistent JSON output
         top_p: 0.9,
         model: this.modelName,
       }
@@ -124,6 +129,32 @@ class GrokService {
     return response.body.choices[0]?.message?.content || '';
   }
 
+  private cleanJsonResponse(response: string): string {
+    // Remove markdown code blocks if present
+    let cleaned = response.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+    
+    // Find the JSON object boundaries
+    const startIndex = cleaned.indexOf('{');
+    const lastIndex = cleaned.lastIndexOf('}');
+    
+    if (startIndex === -1 || lastIndex === -1) {
+      throw new Error("No valid JSON object found in response");
+    }
+    
+    cleaned = cleaned.substring(startIndex, lastIndex + 1);
+    
+    // Fix common JSON issues
+    cleaned = cleaned
+      .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Quote unquoted keys
+      .replace(/:\s*'([^']*)'/g, ': "$1"') // Replace single quotes with double quotes
+      .replace(/\n/g, ' ') // Remove newlines
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+    
+    return cleaned;
+  }
+
   async analyzeProfile(request: ProfileAnalysisRequest): Promise<ProfileAnalysisResult> {
     const { profileUrl, profileType, additionalContext } = request;
     
@@ -133,32 +164,32 @@ Profile URL: ${profileUrl}
 Profile Type: ${profileType}
 ${additionalContext ? `Additional Context: ${additionalContext}` : ''}
 
-Please provide a detailed analysis in JSON format with the following structure:
+Please provide a detailed analysis in VALID JSON format with the following structure. Make sure all strings are properly quoted and there are no trailing commas:
 
 {
-  "overallScore": number (0-100),
-  "strengths": ["List of current strengths"],
-  "weaknesses": ["List of areas needing improvement"],
+  "overallScore": 75,
+  "strengths": ["Example strength 1", "Example strength 2"],
+  "weaknesses": ["Example weakness 1", "Example weakness 2"],
   "suggestions": [
     {
-      "category": "Profile Photo|Headline|Summary|Experience|Skills|Education|Recommendations|Activity|Networking",
-      "priority": "high|medium|low",
+      "category": "Profile Photo",
+      "priority": "high",
       "suggestion": "Specific actionable recommendation",
       "impact": "Expected impact of implementing this suggestion"
     }
   ],
   "industryBenchmarks": [
     {
-      "metric": "Profile completeness|Connection count|Skill endorsements|etc",
-      "userScore": number,
-      "industryAverage": number,
+      "metric": "Profile completeness",
+      "userScore": 70,
+      "industryAverage": 85,
       "recommendation": "How to improve this metric"
     }
   ],
   "actionPlan": {
-    "immediate": ["Actions to take today"],
-    "shortTerm": ["Actions for next 1-2 weeks"],
-    "longTerm": ["Actions for next 1-3 months"]
+    "immediate": ["Action 1", "Action 2"],
+    "shortTerm": ["Action 1", "Action 2"],
+    "longTerm": ["Action 1", "Action 2"]
   }
 }
 
@@ -182,18 +213,45 @@ For GitHub profiles, focus on:
 - Following/followers ratio
 - Open source contributions
 
-Provide specific, actionable advice that will measurably improve their professional visibility and opportunities.`;
+Provide specific, actionable advice that will measurably improve their professional visibility and opportunities. Return ONLY the JSON object, no additional text or formatting.`;
 
     try {
       const response = await this.makeGrokRequest(prompt);
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Invalid JSON format from response");
-
-      const analysisResult: ProfileAnalysisResult = JSON.parse(jsonMatch[0]);
+      const cleanedResponse = this.cleanJsonResponse(response);
+      
+      let analysisResult: ProfileAnalysisResult;
+      
+      try {
+        analysisResult = JSON.parse(cleanedResponse);
+      } catch (parseError) {
+        console.error("JSON Parse Error:", parseError);
+        console.error("Cleaned Response:", cleanedResponse);
+        
+        // Fallback: create a basic analysis result
+        analysisResult = {
+          overallScore: 70,
+          strengths: ["Profile exists and is accessible"],
+          weaknesses: ["Unable to perform detailed analysis"],
+          suggestions: [
+            {
+              category: "General",
+              priority: "medium",
+              suggestion: "Please try the analysis again or check if the profile URL is accessible",
+              impact: "Ensures proper analysis can be performed"
+            }
+          ],
+          industryBenchmarks: [],
+          actionPlan: {
+            immediate: ["Verify profile URL is correct and public"],
+            shortTerm: ["Try analysis again"],
+            longTerm: ["Consider profile optimization"]
+          }
+        };
+      }
       
       // Validate and ensure all required fields are present
-      if (!analysisResult?.overallScore || !Array.isArray(analysisResult.suggestions)) {
-        throw new Error("Invalid structure in profile analysis");
+      if (!analysisResult?.overallScore && analysisResult.overallScore !== 0) {
+        analysisResult.overallScore = 70;
       }
 
       // Ensure score is within valid range
@@ -210,10 +268,38 @@ Provide specific, actionable advice that will measurably improve their professio
         longTerm: []
       };
 
+      // Validate suggestions structure
+      analysisResult.suggestions = analysisResult.suggestions.map(suggestion => ({
+        category: suggestion.category || "General",
+        priority: ['high', 'medium', 'low'].includes(suggestion.priority) ? suggestion.priority : 'medium',
+        suggestion: suggestion.suggestion || "No suggestion provided",
+        impact: suggestion.impact || "Impact not specified"
+      }));
+
       return analysisResult;
     } catch (err) {
       console.error("Profile analysis failed:", err);
-      throw err;
+      
+      // Return a fallback analysis result instead of throwing
+      return {
+        overallScore: 70,
+        strengths: ["Profile is accessible"],
+        weaknesses: ["Analysis could not be completed"],
+        suggestions: [
+          {
+            category: "Technical",
+            priority: "medium",
+            suggestion: "There was an issue analyzing your profile. Please ensure the URL is correct and the profile is public.",
+            impact: "Allows for proper profile analysis and recommendations"
+          }
+        ],
+        industryBenchmarks: [],
+        actionPlan: {
+          immediate: ["Check profile URL and privacy settings"],
+          shortTerm: ["Try analysis again"],
+          longTerm: ["Consider manual profile optimization"]
+        }
+      };
     }
   }
 

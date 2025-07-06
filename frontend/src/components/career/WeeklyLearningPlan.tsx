@@ -232,8 +232,8 @@ const WeeklyLearningPlan: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile-Friendly Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      {/* Fixed Mobile-Friendly Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40">
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Left side - Back button and title */}
@@ -296,7 +296,7 @@ const WeeklyLearningPlan: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex">
+      <div className="flex pt-20">
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
@@ -307,7 +307,7 @@ const WeeklyLearningPlan: React.FC = () => {
 
         {/* Week Navigation Sidebar */}
         <div className={`
-          fixed lg:sticky top-0 left-0 h-screen w-80 bg-white shadow-lg z-40 transform transition-transform duration-300 ease-in-out
+          fixed lg:sticky top-20 left-0 h-screen w-80 bg-white shadow-lg z-40 transform transition-transform duration-300 ease-in-out
           lg:transform-none lg:shadow-sm lg:border-r lg:border-gray-200
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
