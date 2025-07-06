@@ -153,6 +153,10 @@ export const api = {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error('Failed to fetch user');
     }
 
@@ -172,6 +176,10 @@ export const api = {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error('Failed to fetch profile');
     }
 
@@ -190,6 +198,10 @@ export const api = {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error('Failed to check profile status');
     }
 
@@ -212,6 +224,10 @@ export const api = {
     const data = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(data.message || 'Failed to update profile');
     }
 
@@ -234,6 +250,10 @@ export const api = {
     const data = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(data.message || 'Failed to update learning progress');
     }
 
@@ -258,6 +278,10 @@ export const api = {
     const data = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(data.message || 'Failed to upload avatar');
     }
 
@@ -281,6 +305,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to generate career path');
     }
 
@@ -301,6 +329,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok && response.status !== 404) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to get career path');
     }
 
@@ -323,6 +355,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to update career path');
     }
 
@@ -344,6 +380,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to delete career path');
     }
 
@@ -364,6 +404,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to get resource recommendations');
     }
 
@@ -386,6 +430,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to analyze skill gap');
     }
 
@@ -409,6 +457,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to save career path');
     }
 
@@ -429,6 +481,10 @@ export const api = {
     const result = await response.json();
     
     if (!response.ok && response.status !== 404) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
       throw new Error(result.message || 'Failed to get saved career path');
     }
 

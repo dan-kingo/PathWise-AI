@@ -74,25 +74,25 @@ export const useAuthStore = create<AuthState>()(
             response = await api.signup(data.email, data.password, data.name);
             if (response.success) {
               // Don't set user for signup, just return success
+              set({ loading: false });
               return;
             }
           } else if (provider === 'email-login') {
             response = await api.login(data.email, data.password);
             if (response.success && response.token) {
               localStorage.setItem('auth_token', response.token);
-              set({ user: response.user, isAuthenticated: true });
+              set({ user: response.user, isAuthenticated: true, loading: false });
               return;
             }
           }
           
           throw new Error(response?.message || 'Authentication failed');
         } catch (error: any) {
+          set({ loading: false });
           // Re-throw the error with additional properties if they exist
           const authError = new Error(error.message || 'Authentication failed');
           (authError as any).needsVerification = error.needsVerification;
           throw authError;
-        } finally {
-          set({ loading: false });
         }
       },
 

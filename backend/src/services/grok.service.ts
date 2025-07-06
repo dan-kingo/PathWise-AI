@@ -74,7 +74,7 @@ class GrokService {
         messages: [
           {
             role: "system",
-            content: "You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps. Always provide comprehensive weekly plans with specific skills, detailed resources with real URLs, clear milestones, and practical projects. Generate unique content based on the user's specific role, skills, interests, and experience level.",
+            content: "You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps. Always provide comprehensive weekly plans with specific skills, detailed resources with real URLs, clear milestones, and practical projects. Generate unique content based on the user's specific role, skills, interests, and experience level. IMPORTANT: For difficulty field, ONLY use one of these exact values: 'Beginner', 'Intermediate', or 'Advanced' - no other variations or combinations are allowed.",
           },
           {
             role: "user",
@@ -344,6 +344,18 @@ class GrokService {
     return 8; // Default to 8 weeks
   }
 
+  private normalizeDifficulty(difficulty: string): 'Beginner' | 'Intermediate' | 'Advanced' {
+    const difficultyLower = difficulty.toLowerCase();
+    
+    if (difficultyLower.includes('beginner') || difficultyLower.includes('entry') || difficultyLower.includes('basic')) {
+      return 'Beginner';
+    } else if (difficultyLower.includes('advanced') || difficultyLower.includes('expert') || difficultyLower.includes('senior')) {
+      return 'Advanced';
+    } else {
+      return 'Intermediate';
+    }
+  }
+
   async generateCareerPath(request: CareerPathRequest): Promise<CareerPath> {
     const { targetRole, currentSkills, experienceLevel, timeframe, interests, pace = 'normal' } = request;
     
@@ -353,6 +365,8 @@ class GrokService {
     const prompt = `Create a comprehensive, personalized career learning path for someone who wants to become a ${targetRole}.
 
 IMPORTANT: Generate UNIQUE and SPECIFIC content based on the user's profile. Do NOT use generic templates.
+
+CRITICAL REQUIREMENT: For the "difficulty" field, you MUST use EXACTLY one of these three values: "Beginner", "Intermediate", or "Advanced". No other variations, combinations, or descriptions are allowed.
 
 User Profile:
 - Target Role: ${targetRole}
@@ -368,7 +382,7 @@ Generate a detailed response in JSON format with COMPLETE weekly plans for ALL $
   "title": "Unique title specific to ${targetRole} and user's background",
   "description": "Personalized description considering user's current skills: ${currentSkills.join(', ')} and interests: ${interests.join(', ')}",
   "duration": "${timeframe}",
-  "difficulty": "Based on experience level: ${experienceLevel}",
+  "difficulty": "MUST be exactly one of: Beginner, Intermediate, or Advanced",
   "totalWeeks": ${adjustedWeeks},
   "prerequisites": ["Specific to ${targetRole} and ${experienceLevel} level - NOT generic"],
   "outcomes": ["Specific outcomes for ${targetRole} considering user's interests: ${interests.join(', ')}"],
@@ -410,7 +424,8 @@ CRITICAL REQUIREMENTS:
 6. Make each week build upon previous weeks
 7. Consider user's pace: ${pace} (adjust complexity accordingly)
 8. Include projects specific to ${targetRole}
-9. Make content relevant to user's interests: ${interests.join(', ')}`;
+9. Make content relevant to user's interests: ${interests.join(', ')}
+10. DIFFICULTY FIELD MUST BE EXACTLY: "Beginner", "Intermediate", or "Advanced" - no other values allowed`;
 
     try {
       const response = await this.makeGrokRequest(prompt);
@@ -423,6 +438,9 @@ CRITICAL REQUIREMENTS:
       if (!careerPath?.title || !Array.isArray(careerPath.weeklyPlan)) {
         throw new Error("Invalid structure in career path");
       }
+
+      // Normalize difficulty to ensure it matches enum
+      careerPath.difficulty = this.normalizeDifficulty(careerPath.difficulty);
 
       // Enhance resources with additional platform integrations
       for (let week of careerPath.weeklyPlan) {
