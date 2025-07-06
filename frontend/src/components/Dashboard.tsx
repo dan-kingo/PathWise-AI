@@ -4,6 +4,7 @@ import { useProfileStore } from '../stores/profileStore';
 import LoadingSpinner from './LoadingSpinner';
 import ProfileSetup from './profile/ProfileSetup';
 import AICareerPathPlanner from './career/AICareerPathPlanner';
+import ProfileReviewer from './profile/ProfileReviewer';
 import Button from './ui/Button';
 import { 
   User, 
@@ -19,13 +20,15 @@ import {
   ArrowRight,
   BarChart3,
   Calendar,
-  Star
+  Star,
+  Search,
+  Eye
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user, logout, loading } = useAuthStore();
   const { profile, isProfileComplete, checkProfileStatus, fetchProfile } = useProfileStore();
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'career' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'career' | 'profile-reviewer' | 'settings'>('overview');
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -83,6 +86,7 @@ const Dashboard: React.FC = () => {
   const navigation = [
     { id: 'overview', name: 'Overview', icon: BarChart3 },
     { id: 'career', name: 'AI Career Planner', icon: Sparkles },
+    { id: 'profile-reviewer', name: 'Profile Reviewer', icon: Search },
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'settings', name: 'Settings', icon: Settings },
   ];
@@ -290,14 +294,28 @@ const Dashboard: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab('career')}
+                      onClick={() => setActiveTab('profile-reviewer')}
                       className="p-6 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all group text-left"
                     >
                       <div className="flex items-center mb-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                          <TrendingUp className="w-5 h-5 text-blue-600" />
+                          <Search className="w-5 h-5 text-blue-600" />
                         </div>
                         <ArrowRight className="w-4 h-4 text-gray-400 ml-auto group-hover:text-blue-600 transition-colors" />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-1">AI Profile Reviewer</h3>
+                      <p className="text-sm text-gray-600">Get AI insights to optimize your LinkedIn and GitHub profiles</p>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('career')}
+                      className="p-6 border border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all group text-left"
+                    >
+                      <div className="flex items-center mb-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                          <TrendingUp className="w-5 h-5 text-green-600" />
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-gray-400 ml-auto group-hover:text-green-600 transition-colors" />
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-1">Analyze Skill Gap</h3>
                       <p className="text-sm text-gray-600">Identify skills you need to reach your target role</p>
@@ -305,30 +323,16 @@ const Dashboard: React.FC = () => {
 
                     <button
                       onClick={() => setActiveTab('profile')}
-                      className="p-6 border border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all group text-left"
+                      className="p-6 border border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-all group text-left"
                     >
                       <div className="flex items-center mb-3">
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                          <User className="w-5 h-5 text-green-600" />
+                        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                          <User className="w-5 h-5 text-orange-600" />
                         </div>
-                        <ArrowRight className="w-4 h-4 text-gray-400 ml-auto group-hover:text-green-600 transition-colors" />
+                        <ArrowRight className="w-4 h-4 text-gray-400 ml-auto group-hover:text-orange-600 transition-colors" />
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-1">Update Profile</h3>
                       <p className="text-sm text-gray-600">Keep your information current for better recommendations</p>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('settings')}
-                      className="p-6 border border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
-                    >
-                      <div className="flex items-center mb-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                          <Settings className="w-5 h-5 text-gray-600" />
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-gray-400 ml-auto group-hover:text-gray-600 transition-colors" />
-                      </div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Account Settings</h3>
-                      <p className="text-sm text-gray-600">Manage your account preferences and security</p>
                     </button>
                   </div>
                 </div>
@@ -381,6 +385,7 @@ const Dashboard: React.FC = () => {
         )}
 
         {activeTab === 'career' && <AICareerPathPlanner />}
+        {activeTab === 'profile-reviewer' && <ProfileReviewer />}
 
         {activeTab === 'profile' && (
           <div className="space-y-6">

@@ -12,6 +12,7 @@ import connectDB from "./configs/db.js";
 import authRoutes from "./routes/auth.route.js";
 import profileRoutes from "./routes/profile.route.js";
 import careerRoutes from "./routes/career.route.js";
+import profileReviewerRoutes from "./routes/profileReviewer.route.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 dotenv.config();
@@ -75,6 +76,7 @@ app.use(passport.session());
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
 app.use('/career', careerRoutes);
+app.use('/profile-reviewer', profileReviewerRoutes);
 
 // Health check
 app.get("/", (_req: Request, res: Response) => {
@@ -107,6 +109,14 @@ app.get("/", (_req: Request, res: Response) => {
         analyzeSkills: "POST /career/analyze-skills",
         savePath: "POST /career/save-path",
         getSavedPath: "GET /career/saved-path"
+      },
+      profileReviewer: {
+        analyze: "POST /profile-reviewer/analyze",
+        getReviews: "GET /profile-reviewer/reviews",
+        getReview: "GET /profile-reviewer/reviews/:reviewId",
+        deleteReview: "DELETE /profile-reviewer/reviews/:reviewId",
+        updateNotes: "PUT /profile-reviewer/reviews/:reviewId/notes",
+        getInsights: "GET /profile-reviewer/insights"
       }
     }
   });

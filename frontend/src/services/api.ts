@@ -444,6 +444,157 @@ export const api = {
     return result;
   },
 
+  // Profile Reviewer API methods
+  analyzeProfile: async (profileUrl: string, profileType: 'linkedin' | 'github', additionalContext?: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/profile-reviewer/analyze`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ profileUrl, profileType, additionalContext }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to analyze profile');
+    }
+
+    return result;
+  },
+
+  getProfileReviews: async (profileType?: 'linkedin' | 'github') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const queryParams = profileType ? `?profileType=${profileType}` : '';
+    const response = await fetch(`${API_BASE_URL}/profile-reviewer/reviews${queryParams}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to get profile reviews');
+    }
+
+    return result;
+  },
+
+  getProfileReview: async (reviewId: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/profile-reviewer/reviews/${reviewId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to get profile review');
+    }
+
+    return result;
+  },
+
+  deleteProfileReview: async (reviewId: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/profile-reviewer/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to delete profile review');
+    }
+
+    return result;
+  },
+
+  updateReviewNotes: async (reviewId: string, notes: string, completedSuggestions: string[]) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/profile-reviewer/reviews/${reviewId}/notes`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ notes, completedSuggestions }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to update review notes');
+    }
+
+    return result;
+  },
+
+  getProfileInsights: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No token found');
+
+    const response = await fetch(`${API_BASE_URL}/profile-reviewer/insights`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        throw new Error('Session expired');
+      }
+      throw new Error(result.message || 'Failed to get profile insights');
+    }
+
+    return result;
+  },
+
   // Legacy methods for backward compatibility
   saveCareerPath: async (careerPath: any) => {
     const token = localStorage.getItem('auth_token');

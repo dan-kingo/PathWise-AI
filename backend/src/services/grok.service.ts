@@ -21,6 +21,12 @@ interface CareerPathRequest {
   pace?: 'slow' | 'normal' | 'fast'; // New pace field
 }
 
+interface ProfileAnalysisRequest {
+  profileUrl: string;
+  profileType: 'linkedin' | 'github';
+  additionalContext?: string;
+}
+
 interface WeeklyPlan {
   week: number;
   title: string;
@@ -55,6 +61,29 @@ interface CareerPath {
   jobTitles: string[];
 }
 
+interface ProfileAnalysisResult {
+  overallScore: number;
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: {
+    category: string;
+    priority: 'high' | 'medium' | 'low';
+    suggestion: string;
+    impact: string;
+  }[];
+  industryBenchmarks: {
+    metric: string;
+    userScore: number;
+    industryAverage: number;
+    recommendation: string;
+  }[];
+  actionPlan: {
+    immediate: string[];
+    shortTerm: string[];
+    longTerm: string[];
+  };
+}
+
 class GrokService {
   private client: ReturnType<typeof ModelClient>;
   private modelName: string = "xai/grok-3";
@@ -74,14 +103,14 @@ class GrokService {
         messages: [
           {
             role: "system",
-            content: "You are an expert career advisor and learning path designer. Create detailed, practical career roadmaps with real resources and actionable steps. Always provide comprehensive weekly plans with specific skills, detailed resources with real URLs, clear milestones, and practical projects. Generate unique content based on the user's specific role, skills, interests, and experience level. IMPORTANT: For difficulty field, ONLY use one of these exact values: 'Beginner', 'Intermediate', or 'Advanced' - no other variations or combinations are allowed.",
+            content: "You are an expert career advisor and profile optimization specialist. You analyze professional profiles (LinkedIn/GitHub) and provide actionable insights to improve visibility, professionalism, and career prospects. Always provide specific, measurable recommendations with clear impact explanations.",
           },
           {
             role: "user",
             content: prompt,
           }
         ],
-        temperature: 0.8, // Increased for more creativity
+        temperature: 0.8,
         top_p: 0.9,
         model: this.modelName,
       }
@@ -93,6 +122,99 @@ class GrokService {
     }
 
     return response.body.choices[0]?.message?.content || '';
+  }
+
+  async analyzeProfile(request: ProfileAnalysisRequest): Promise<ProfileAnalysisResult> {
+    const { profileUrl, profileType, additionalContext } = request;
+    
+    const prompt = `Analyze this ${profileType} profile and provide comprehensive improvement recommendations.
+
+Profile URL: ${profileUrl}
+Profile Type: ${profileType}
+${additionalContext ? `Additional Context: ${additionalContext}` : ''}
+
+Please provide a detailed analysis in JSON format with the following structure:
+
+{
+  "overallScore": number (0-100),
+  "strengths": ["List of current strengths"],
+  "weaknesses": ["List of areas needing improvement"],
+  "suggestions": [
+    {
+      "category": "Profile Photo|Headline|Summary|Experience|Skills|Education|Recommendations|Activity|Networking",
+      "priority": "high|medium|low",
+      "suggestion": "Specific actionable recommendation",
+      "impact": "Expected impact of implementing this suggestion"
+    }
+  ],
+  "industryBenchmarks": [
+    {
+      "metric": "Profile completeness|Connection count|Skill endorsements|etc",
+      "userScore": number,
+      "industryAverage": number,
+      "recommendation": "How to improve this metric"
+    }
+  ],
+  "actionPlan": {
+    "immediate": ["Actions to take today"],
+    "shortTerm": ["Actions for next 1-2 weeks"],
+    "longTerm": ["Actions for next 1-3 months"]
+  }
+}
+
+For LinkedIn profiles, focus on:
+- Profile photo quality and professionalism
+- Headline optimization with keywords
+- Summary/About section engagement
+- Experience descriptions with achievements
+- Skills and endorsements
+- Recommendations and giving recommendations
+- Activity and content sharing
+- Network building strategies
+
+For GitHub profiles, focus on:
+- Profile README optimization
+- Repository organization and descriptions
+- Code quality and documentation
+- Contribution activity and consistency
+- Project showcase and pinned repositories
+- Bio and contact information
+- Following/followers ratio
+- Open source contributions
+
+Provide specific, actionable advice that will measurably improve their professional visibility and opportunities.`;
+
+    try {
+      const response = await this.makeGrokRequest(prompt);
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid JSON format from response");
+
+      const analysisResult: ProfileAnalysisResult = JSON.parse(jsonMatch[0]);
+      
+      // Validate and ensure all required fields are present
+      if (!analysisResult?.overallScore || !Array.isArray(analysisResult.suggestions)) {
+        throw new Error("Invalid structure in profile analysis");
+      }
+
+      // Ensure score is within valid range
+      analysisResult.overallScore = Math.max(0, Math.min(100, analysisResult.overallScore));
+
+      // Ensure all required arrays exist
+      analysisResult.strengths = analysisResult.strengths || [];
+      analysisResult.weaknesses = analysisResult.weaknesses || [];
+      analysisResult.suggestions = analysisResult.suggestions || [];
+      analysisResult.industryBenchmarks = analysisResult.industryBenchmarks || [];
+      analysisResult.actionPlan = analysisResult.actionPlan || {
+        immediate: [],
+        shortTerm: [],
+        longTerm: []
+      };
+
+      return analysisResult;
+    } catch (err) {
+      console.error("Profile analysis failed:", err);
+      throw err;
+    }
   }
 
   private async fetchYouTubeResources(skill: string, level: string): Promise<any[]> {
