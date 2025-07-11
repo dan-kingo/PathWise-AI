@@ -10,21 +10,15 @@ import {
   Sparkles, 
   Target, 
   Clock, 
-  BookOpen, 
   CheckCircle, 
-  Play, 
   Save,
   Brain,
   TrendingUp,
   Users,
   DollarSign,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
   Star,
   Award,
   Calendar,
-  BarChart3,
   ArrowRight,
   Zap,
   Turtle,
@@ -79,7 +73,7 @@ const AICareerPathPlanner: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPath, setGeneratedPath] = useState<CareerPath | null>(null);
   const [savedPath, setSavedPath] = useState<CareerPath | null>(null);
-  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
+  const [_expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
   const [isPathSaved, setIsPathSaved] = useState(false);
 
   useEffect(() => {
@@ -180,15 +174,29 @@ const AICareerPathPlanner: React.FC = () => {
     }
   };
 
-  const toggleWeekExpansion = (week: number) => {
-    const newExpanded = new Set(expandedWeeks);
-    if (newExpanded.has(week)) {
-      newExpanded.delete(week);
-    } else {
-      newExpanded.add(week);
-    }
-    setExpandedWeeks(newExpanded);
-  };
+const extractSalaryRange = (salaryText : string) =>  {
+  if (!salaryText) return '';
+  
+  // Find the salary pattern
+  const match = salaryText.match(/\$[0-9,]+(\s*-\s*\$[0-9,]+)?/);
+  if (!match) return '';
+  
+  let range = match[0];
+  
+  // Format the numbers
+  range = range.replace(/\$([0-9]+),([0-9]{3})/g, (_match, p1, _p2) => {
+    return `$${p1}K`;
+  });
+  
+  // Add /yr
+  if (salaryText.toLowerCase().includes('per year') || 
+      salaryText.toLowerCase().includes('per annum')) {
+    range += '/yr';
+  }
+  
+  return range;
+}
+
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -199,34 +207,17 @@ const AICareerPathPlanner: React.FC = () => {
     }
   };
 
-  const getResourceIcon = (type: string) => {
-    switch (type) {
-      case 'video': return '🎥';
-      case 'article': return '📄';
-      case 'course': return '📚';
-      case 'practice': return '💻';
-      case 'project': return '🚀';
-      default: return '📖';
-    }
-  };
+  
 
   const getPaceIcon = (paceValue: string) => {
     switch (paceValue) {
-      case 'slow': return <Turtle className="w-4 h-4" />;
-      case 'fast': return <Zap className="w-4 h-4" />;
-      default: return <Gauge className="w-4 h-4" />;
+      case 'slow': return <Turtle className="w-8 h-8" />;
+      case 'fast': return <Zap className="w-8 h-8" />;
+      default: return <Gauge className="w-8 h-8" />;
     }
   };
 
-  const openResource = (url: string) => {
-    if (url.startsWith('http')) {
-      window.open(url, '_blank');
-    } else if (url.startsWith('Search:')) {
-      const searchTerm = url.replace('Search:', '').trim();
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`, '_blank');
-    }
-  };
-
+  
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -243,10 +234,10 @@ const AICareerPathPlanner: React.FC = () => {
       </div>
 
       {/* Input Form */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-4xl mx-auto">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
         <div className="flex items-center mb-8">
           <Brain className="w-6 h-6 mr-3 text-purple-600" />
-          <h2 className="text-2xl font-semibold text-gray-900">Tell us about your career goals</h2>
+          <h2 className="md:text-2xl text-xl font-semibold text-gray-900">Tell us about your career goals</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -389,33 +380,33 @@ const AICareerPathPlanner: React.FC = () => {
       {generatedPath && (
         <div className="space-y-8">
           {/* Path Overview */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-6xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-6">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">{generatedPath.title}</h2>
+                <h2 className="md:text-3xl text-xl font-bold text-gray-900 mb-2">{generatedPath.title}</h2>
                 <p className="text-lg text-gray-600">{generatedPath.description}</p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex sm:flex-row gap-3">
                 {!isPathSaved && (
                   <Button
                     onClick={saveCareerPath}
                     icon={<Save className="w-5 h-5" />}
                     variant="outline"
                   >
-                    Save Path
+                    Save
                   </Button>
                 )}
                 {isPathSaved && (
                   <div className="flex items-center text-green-600 bg-green-50 px-4 py-2 rounded-lg">
                     <CheckCircle className="w-5 h-5 mr-2" />
-                    <span className="font-medium">Path Saved</span>
+                    <span className="font-medium">Saved</span>
                   </div>
                 )}
                 <Button
                   onClick={startLearningPlan}
                   icon={<ArrowRight className="w-5 h-5" />}
                 >
-                  Start Learning Plan
+                  Start
                 </Button>
               </div>
             </div>
@@ -442,7 +433,7 @@ const AICareerPathPlanner: React.FC = () => {
 
               <div className="text-center p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
                 <DollarSign className="w-8 h-8 text-yellow-600 mx-auto mb-3" />
-                <div className="text-lg font-bold text-gray-900">{generatedPath.averageSalary}</div>
+                <div className="text-lg font-bold text-gray-900">{extractSalaryRange(generatedPath.averageSalary)}</div>
                 <div className="text-sm text-gray-600">Avg Salary</div>
               </div>
 
@@ -525,8 +516,8 @@ const AICareerPathPlanner: React.FC = () => {
           </div>
 
           {/* Weekly Plan Preview */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
+            <div className="flex md:items-center md:justify-between flex-col gap-4 mb-8">
               <div className="flex items-center">
                 <Calendar className="w-6 h-6 mr-3 text-blue-600" />
                 <h3 className="text-2xl font-semibold text-gray-900">Weekly Learning Plan Preview</h3>
@@ -601,8 +592,8 @@ const AICareerPathPlanner: React.FC = () => {
 
       {/* Saved Career Path */}
       {savedPath && !generatedPath && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
+          <div className="flex md:items-center  md:justify-between flex-col gap-4 mb-6">
             <h3 className="text-xl font-semibold text-gray-900 flex items-center">
               <Save className="w-5 h-5 mr-2 text-blue-600" />
               Your Saved Career Path
@@ -627,7 +618,7 @@ const AICareerPathPlanner: React.FC = () => {
           <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
             <h4 className="font-semibold text-blue-900 text-lg">{savedPath.title}</h4>
             <p className="text-blue-700 mt-2">{savedPath.description}</p>
-            <div className="flex items-center gap-6 mt-4 text-sm text-blue-600">
+            <div className="flex md:items-center flex-wrap gap-6 mt-4 text-sm text-blue-600">
               <span className="flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
                 {savedPath.duration}
