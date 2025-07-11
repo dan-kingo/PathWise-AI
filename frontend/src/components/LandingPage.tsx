@@ -18,8 +18,7 @@ import {
   MapPin,
   Linkedin,
   Twitter,
-  Github
-} from 'lucide-react';
+  Github} from 'lucide-react';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,45 +51,45 @@ const LandingPage: React.FC = () => {
       description: "Identify exactly what skills you need to develop to reach your dream job with detailed analysis."
     },
     {
-      icon: <TrendingUp className="w-8 h-8 text-green-600" />,
-      title: "Progress Tracking",
-      description: "Monitor your learning journey with milestone tracking and progress visualization."
+      icon: <Users className="w-8 h-8 text-green-600" />,
+      title: "Profile Review",
+      description: "Receive AI based review & feedback on your resume, LinkedIn profile, and Github to enhance your job applications."
     },
     {
-      icon: <Users className="w-8 h-8 text-orange-600" />,
-      title: "Industry Insights",
-      description: "Access real-time market data, salary information, and job demand trends."
+      icon: <TrendingUp className="w-8 h-8 text-orange-600" />,
+      title: "Progress Tracking",
+      description: "Stay on track with your personalized learning path. Track your progress, milestones, and achievements in real-time."
     }
   ];
 
   const testimonials = [
     {
-      name: "Sarah Chen",
+      name: "Sosna Dagne ",
       role: "Frontend Developer",
-      company: "Google",
+      company: "Askuala Link",
       image: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2",
       quote: "Job Ready AI Coach helped me transition from marketing to tech in just 6 months. The personalized roadmap was exactly what I needed."
     },
     {
-      name: "Marcus Johnson",
+      name: "Fikir Tesfaye",
       role: "Data Scientist",
-      company: "Microsoft",
+      company: "Google",
       image: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2",
       quote: "The skill gap analysis was incredibly accurate. It showed me exactly what I was missing and how to get there."
     },
     {
       name: "Emily Rodriguez",
       role: "UX Designer",
-      company: "Airbnb",
+      company: "Meta",
       image: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2",
       quote: "I love how the AI creates a step-by-step plan. It made my career transition feel manageable and achievable."
     }
   ];
 
   const stats = [
-    { number: "10,000+", label: "Career Paths Generated" },
+    { number: "1000+", label: "Career Paths Generated" },
     { number: "85%", label: "Success Rate" },
-    { number: "50+", label: "Career Fields" },
+    { number: "10+", label: "Career Fields" },
     { number: "4.9/5", label: "User Rating" }
   ];
 
@@ -364,7 +363,7 @@ const LandingPage: React.FC = () => {
                   <p className="text-gray-600">Career Fields</p>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">10k+</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">1000+</h3>
                   <p className="text-gray-600">Success Stories</p>
                 </div>
               </div>
@@ -407,14 +406,14 @@ const LandingPage: React.FC = () => {
                   <Phone className="w-6 h-6 text-purple-600 mr-4" />
                   <div>
                     <p className="font-medium text-gray-900">Phone</p>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
+                    <p className="text-gray-600">+251 989-842-352</p>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <MapPin className="w-6 h-6 text-purple-600 mr-4" />
                   <div>
                     <p className="font-medium text-gray-900">Address</p>
-                    <p className="text-gray-600">San Francisco, CA</p>
+                    <p className="text-gray-600">Addis Abeba, Ethiopia</p>
                   </div>
                 </div>
               </div>
@@ -422,13 +421,13 @@ const LandingPage: React.FC = () => {
               <div className="mt-8">
                 <h4 className="font-medium text-gray-900 mb-4">Follow Us</h4>
                 <div className="flex space-x-4">
-                  <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-purple-100 transition-colors">
+                  <a href="https://linkedin.com/in/daniel_dejen_worku" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-purple-100 transition-colors">
                     <Linkedin className="w-5 h-5 text-gray-600" />
                   </a>
-                  <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-purple-100 transition-colors">
+                  <a href="https://twitter.com/@Dani_Mad23" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-purple-100 transition-colors">
                     <Twitter className="w-5 h-5 text-gray-600" />
                   </a>
-                  <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-purple-100 transition-colors">
+                  <a href="https://github.com/dan-kingo" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-purple-100 transition-colors">
                     <Github className="w-5 h-5 text-gray-600" />
                   </a>
                 </div>
@@ -509,33 +508,33 @@ const LandingPage: React.FC = () => {
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
+                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="#features" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#features" className="hover:text-white transition-colors">API</a></li>
               </ul>
             </div>
             
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="#about" className="hover:text-white transition-colors">About</a></li>
+                <li><a href="#about" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#about" className="hover:text-white transition-colors">Careers</a></li>
               </ul>
             </div>
             
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
+                <li><a href="#contact" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="#contact" className="hover:text-white transition-colors">Contact</a></li>
+                <li><a href="#contact" className="hover:text-white transition-colors">Privacy</a></li>
               </ul>
             </div>
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Job Ready AI Coach. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Job Ready AI Coach. All rights reserved.</p>
           </div>
         </div>
       </footer>
