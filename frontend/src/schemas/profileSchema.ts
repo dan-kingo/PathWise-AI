@@ -28,20 +28,21 @@ export const profileSchema = z.object({
   }),
 });
 
-export const authSchema = z.object({
+export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
-  confirmPassword: z.string().optional(),
-}).refine((data) => {
-  if (data.confirmPassword && data.password !== data.confirmPassword) {
-    return false;
-  }
-  return true;
-}, {
+});
+
+export const signupSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
-export type AuthFormData = z.infer<typeof authSchema>;
+export type LoginFormData = z.infer<typeof loginSchema>;
+export type SignupFormData = z.infer<typeof signupSchema>;

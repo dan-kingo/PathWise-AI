@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FieldErrors, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { authSchema, AuthFormData } from '../schemas/profileSchema';
+import { loginSchema, signupSchema, LoginFormData, SignupFormData } from '../schemas/profileSchema';
 import { useAuthStore } from '../stores/authStore';
 import Input from './ui/Input';
 import Button from './ui/Button';
@@ -31,37 +31,34 @@ const LoginPage: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
-    watch
-  } = useForm<AuthFormData>({
-    resolver: zodResolver(authSchema),
+    reset
+  } = useForm<LoginFormData | SignupFormData>({
+    resolver: zodResolver(isSignUp ? signupSchema : loginSchema),
     defaultValues: {
       email: '',
       password: '',
-      name: '',
-      confirmPassword: '',
+      ...(isSignUp ? { name: '', confirmPassword: '' } : {}),
     },
   });
 
-  const password = watch('password');
-
-  const onSubmit = async (data: AuthFormData) => {
+  const onSubmit = async (data: LoginFormData | SignupFormData) => {
     setIsSubmitting(true);
     try {
       if (isSignUp) {
+        const signupData = data as SignupFormData;
         await login('email-signup', {
-          email: data.email,
-          password: data.password,
-          name: data.name
+          email: signupData.email,
+          password: signupData.password,
+          name: signupData.name
         });
         toast.success('Account created successfully! Please check your email to verify your account.');
-        // Switch to login mode after successful signup
         setIsSignUp(false);
-        reset({ email: data.email, password: '', name: '', confirmPassword: '' });
+        reset({ email: signupData.email, password: '' });
       } else {
+        const loginData = data as LoginFormData;
         await login('email-login', {
-          email: data.email,
-          password: data.password
+          email: loginData.email,
+          password: loginData.password
         });
         toast.success('Welcome back!');
         navigate('/dashboard');
@@ -80,7 +77,11 @@ const LoginPage: React.FC = () => {
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
-    reset();
+    reset({
+      email: '',
+      password: '',
+      ...(isSignUp ? {} : { name: '', confirmPassword: '' }),
+    });
   };
 
   const handleGoogleLogin = () => {
@@ -105,11 +106,6 @@ const LoginPage: React.FC = () => {
       <div className="max-w-md w-full">
         <div className="card animate-slide-up">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {isSignUp ? 'Create Account' : 'Welcome Back'}
             </h1>
@@ -124,7 +120,7 @@ const LoginPage: React.FC = () => {
                 {...register('name')}
                 label="Full Name"
                 placeholder="Enter your full name"
-                error={errors.name?.message}
+                error={isSignUp ? (errors as FieldErrors<SignupFormData>).name?.message : undefined}
                 icon={<User className="w-5 h-5 text-gray-400" />}
                 disabled={isSubmitting}
               />
@@ -167,7 +163,7 @@ const LoginPage: React.FC = () => {
                   type={showConfirmPassword ? 'text' : 'password'}
                   label="Confirm Password"
                   placeholder="Confirm your password"
-                  error={errors.confirmPassword?.message}
+                  error={(errors as FieldErrors<SignupFormData>).confirmPassword?.message}
                   icon={<Lock className="w-5 h-5 text-gray-400" />}
                   disabled={isSubmitting}
                 />
