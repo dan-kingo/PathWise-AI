@@ -4,14 +4,6 @@ import { AzureKeyCredential } from "@azure/core-auth";
 
 dotenv.config();
 
-interface GrokResponse {
-  choices: {
-    message: {
-      content: string;
-    }; 
-  }[];
-}
-
 interface CareerPathRequest {
   targetRole: string;
   currentSkills: string[];
@@ -87,11 +79,7 @@ interface GitHubLanguageStats {
   [language: string]: number;
 }
 
-interface GitHubCommitActivity {
-  total: number;
-  week: number;
-  days: number[];
-}
+
 
 interface WeeklyPlan {
   week: number;
@@ -267,25 +255,6 @@ class GrokService {
     }
   }
 
-  private async fetchGitHubCommitActivity(username: string, repoName: string): Promise<GitHubCommitActivity[]> {
-    try {
-      const response = await fetch(`https://api.github.com/repos/${username}/${repoName}/stats/commit_activity`, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'Job-Ready-AI-Coach'
-        }
-      });
-
-      if (!response.ok) {
-        return [];
-      }
-
-      return response.json();
-    } catch (error) {
-      return [];
-    }
-  }
-
   private extractGitHubUsername(profileUrl: string): string {
     try {
       const url = new URL(profileUrl);
@@ -457,12 +426,18 @@ Provide specific, data-driven recommendations based on the actual GitHub metrics
       return analysisResult;
     } catch (error) {
       console.error("GitHub profile analysis failed:", error);
-      throw new Error(`Failed to analyze GitHub profile: ${error.message}`);
+      throw new Error(`Failed to analyze GitHub profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   private generateFallbackGitHubAnalysis(profileData: any): ProfileAnalysisResult {
     const score = this.calculateGitHubScore(profileData);
+    
+    const immediateActions = [
+      !profileData.bio || profileData.bio === 'No bio' ? "Add a compelling bio" : null,
+      !profileData.location || profileData.location === 'Not specified' ? "Add your location" : null,
+      profileData.publicRepos < 5 ? "Create more public repositories" : null
+    ].filter((item): item is string => item !== null);
     
     return {
       overallScore: score,
@@ -490,11 +465,7 @@ Provide specific, data-driven recommendations based on the actual GitHub metrics
         }
       ],
       actionPlan: {
-        immediate: [
-          !profileData.bio || profileData.bio === 'No bio' ? "Add a compelling bio" : null,
-          !profileData.location || profileData.location === 'Not specified' ? "Add your location" : null,
-          profileData.publicRepos < 5 ? "Create more public repositories" : null
-        ].filter(Boolean),
+        immediate: immediateActions,
         shortTerm: [
           "Improve README files for top repositories",
           "Add more descriptive commit messages",
@@ -700,12 +671,18 @@ Provide specific, actionable advice that will measurably improve their professio
       return analysisResult;
     } catch (error) {
       console.error("LinkedIn profile analysis failed:", error);
-      throw new Error(`Failed to analyze LinkedIn profile: ${error.message}`);
+      throw new Error(`Failed to analyze LinkedIn profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   private generateFallbackLinkedInAnalysis(linkedinData: any): ProfileAnalysisResult {
     const score = this.calculateLinkedInScore(linkedinData);
+    
+    const immediateActions = [
+      !linkedinData.headline ? "Write a compelling headline" : null,
+      !linkedinData.summary ? "Add a professional summary" : null,
+      (linkedinData.skills || []).length < 5 ? "Add more skills" : null
+    ].filter((item): item is string => item !== null);
     
     return {
       overallScore: score,
@@ -733,11 +710,7 @@ Provide specific, actionable advice that will measurably improve their professio
         }
       ],
       actionPlan: {
-        immediate: [
-          !linkedinData.headline ? "Write a compelling headline" : null,
-          !linkedinData.summary ? "Add a professional summary" : null,
-          (linkedinData.skills || []).length < 5 ? "Add more skills" : null
-        ].filter(Boolean),
+        immediate: immediateActions,
         shortTerm: [
           "Optimize experience descriptions with achievements",
           "Request recommendations from colleagues",
@@ -986,7 +959,7 @@ Provide specific, actionable advice that will measurably improve their professio
     ];
   }
 
-  private generateRoleSpecificProjects(targetRole: string, week: number, skills: string[]): string[] {
+  private generateRoleSpecificProjects(targetRole: string, week: number): string[] {
     const roleLower = targetRole.toLowerCase();
     
     if (roleLower.includes('frontend') || roleLower.includes('ui') || roleLower.includes('react')) {
@@ -1229,11 +1202,11 @@ CRITICAL REQUIREMENTS:
       careerPath.difficulty = this.normalizeDifficulty(careerPath.difficulty);
 
       for (let week of careerPath.weeklyPlan) {
-        const additionalResources = await this.getEnhancedResources(week.skills, targetRole);
+        const additionalResources = await this.getEnhancedResources(week.skills || [], targetRole);
         week.resources = [...(week.resources || []), ...additionalResources];
         
         if (!week.projects || week.projects.length === 0) {
-          week.projects = this.generateRoleSpecificProjects(targetRole, week.week, week.skills);
+          week.projects = this.generateRoleSpecificProjects(targetRole, week.week);
         }
         
         week.skills = week.skills || [];
@@ -1249,15 +1222,14 @@ CRITICAL REQUIREMENTS:
     }
   }
 
-  private async getEnhancedResources(skills: string[], targetRole: string): Promise<any[]> {
+  private async getEnhancedResources(skills: string[], _targetRole: string): Promise<any[]> {
     const enhancedResources: any[] = [];
     
     for (const skill of skills.slice(0, 2)) {
       try {
-        const [youtube, udemy, coursera, mdn, community] = await Promise.all([
+        const [youtube, udemy, mdn, community] = await Promise.all([
           this.fetchYouTubeResources(skill, 'beginner'),
           this.fetchUdemyResources(skill),
-          this.fetchCourseraResources(skill),
           this.fetchMDNResources(skill),
           this.fetchCommunityResources(skill)
         ]);
@@ -1292,7 +1264,7 @@ CRITICAL REQUIREMENTS:
     }
   }
 
-  async analyzeSkillGap(currentSkills: string[], targetRole: string): Promise<any> {
+  async analyzeSkillGap(_currentSkills: string[], _targetRole: string): Promise<any> {
     throw new Error("Skill gap analysis is not implemented yet. This feature will be available soon.");
   }
 }
