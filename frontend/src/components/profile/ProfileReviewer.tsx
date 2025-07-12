@@ -13,7 +13,6 @@ import {
   AlertTriangle, 
   TrendingUp, 
   Target, 
-  Award, 
   BarChart3,
   Clock,
   Star,
@@ -24,11 +23,9 @@ import {
   Eye,
   Github,
   Linkedin,
-  ArrowRight,
   Lightbulb,
   Flag,
   Calendar,
-  Users,
   Zap,
   Info,
   AlertCircle
@@ -397,10 +394,10 @@ const ProfileReviewer: React.FC = () => {
         <div className="space-y-4">
           {analysis.suggestions.map((suggestion, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between  flex-wrap gap-4 mb-3">
                 <div className="flex items-center">
                   {getPriorityIcon(suggestion.priority)}
-                  <span className="font-medium text-gray-900 ml-2">{suggestion.category}</span>
+                  <span className="font-medium text-sm md:text-[16px] text-gray-900 ml-2">{suggestion.category}</span>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(suggestion.priority)}`}>
                   {suggestion.priority} priority
@@ -423,7 +420,7 @@ const ProfileReviewer: React.FC = () => {
           <div className="space-y-4">
             {analysis.industryBenchmarks.map((benchmark, index) => (
               <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-4">
                   <span className="font-medium text-gray-900">{benchmark.metric}</span>
                   <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-600">You: {benchmark.userScore}</span>
@@ -545,7 +542,7 @@ const ProfileReviewer: React.FC = () => {
       {activeTab === 'analyze' && (
         <div className="space-y-8">
           {/* Analysis Form */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
             <div className="flex items-center mb-8">
               <Search className="w-6 h-6 mr-3 text-blue-600" />
               <h2 className="text-2xl font-semibold text-gray-900">Analyze Your Profile</h2>
@@ -558,7 +555,7 @@ const ProfileReviewer: React.FC = () => {
                     label="Profile URL"
                     value={profileUrl}
                     onChange={(e) => setProfileUrl(e.target.value)}
-                    placeholder="https://linkedin.com/in/yourprofile or https://github.com/yourusername"
+                    placeholder={profileType === 'linkedin' ? "https://linkedin.com/in/yourprofile" : "https://github.com/yourusername"}
                     icon={<ExternalLink className="w-5 h-5 text-gray-400" />}
                   />
                 </div>
@@ -614,7 +611,7 @@ const ProfileReviewer: React.FC = () => {
 
           {/* LinkedIn Data Form */}
           {showLinkedInForm && profileType === 'linkedin' && (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-4xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
                   <Linkedin className="w-6 h-6 mr-3 text-blue-600" />
@@ -654,7 +651,7 @@ const ProfileReviewer: React.FC = () => {
 
           {/* Current Analysis Results */}
           {currentAnalysis && (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-6xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900">Analysis Results</h2>
                 <div className="flex items-center text-sm text-gray-500">
@@ -723,7 +720,7 @@ const ProfileReviewer: React.FC = () => {
               <div className="lg:col-span-2">
                 {selectedReview ? (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center md:justify-between flex-wrap gap-4 mb-6">
                       <div className="flex items-center">
                         {selectedReview.profileType === 'linkedin' ? 
                           <Linkedin className="w-6 h-6 text-blue-600 mr-3" /> : 

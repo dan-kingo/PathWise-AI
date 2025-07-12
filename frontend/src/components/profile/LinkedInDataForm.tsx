@@ -249,9 +249,6 @@ const LinkedInDataForm: React.FC<LinkedInDataFormProps> = ({ data, onChange, onS
         {(data.experience || []).length === 0 && (
           <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
             <p className="text-gray-500 mb-4">No work experience added yet</p>
-            <Button onClick={addExperience} icon={<Plus className="w-4 h-4" />}>
-              Add Your First Experience
-            </Button>
           </div>
         )}
       </div>

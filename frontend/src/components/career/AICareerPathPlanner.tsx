@@ -593,7 +593,7 @@ const extractSalaryRange = (salaryText : string) =>  {
       {/* Saved Career Path */}
       {savedPath && !generatedPath && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mx-auto">
-          <div className="flex md:items-center  md:justify-between flex-col gap-4 mb-6">
+          <div className="flex items-center  md:justify-between gap-4 mb-6 flex-wrap">
             <h3 className="text-xl font-semibold text-gray-900 flex items-center">
               <Save className="w-5 h-5 mr-2 text-blue-600" />
               Your Saved Career Path

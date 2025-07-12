@@ -7,12 +7,10 @@ import LoadingSpinner from '../LoadingSpinner';
 import { 
   Calendar, 
   CheckCircle, 
-  Clock, 
   BookOpen, 
   Play, 
   Target, 
   ArrowLeft,
-  ArrowRight,
   Star,
   ExternalLink,
   Award,
@@ -307,7 +305,7 @@ const WeeklyLearningPlan: React.FC = () => {
 
         {/* Week Navigation Sidebar */}
         <div className={`
-          fixed lg:sticky top-20 left-0 h-screen w-80 bg-white shadow-lg z-40 transform transition-transform duration-300 ease-in-out
+          fixed lg:sticky top-20 left-0 h-screen w-80 bg-white shadow-lg z-1 transform transition-transform duration-300 ease-in-out
           lg:transform-none lg:shadow-sm lg:border-r lg:border-gray-200
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
@@ -622,7 +620,7 @@ const WeeklyLearningPlan: React.FC = () => {
                 Week Summary
               </h3>
               
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="text-center">
                   <div className="text-xl sm:text-2xl font-bold text-purple-600">
                     {(currentWeekData.resources || []).filter(r => completedResources.has(r.title)).length}

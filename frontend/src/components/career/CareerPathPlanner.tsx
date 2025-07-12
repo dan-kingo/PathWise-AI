@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useCareerStore, mockCareerPaths } from '../../stores/careerStore';
 import { useProfileStore } from '../../stores/profileStore';
-import { Clock, Users, BookOpen, Target, ChevronRight, Play, CheckCircle } from 'lucide-react';
+import { Clock, BookOpen, Target, ChevronRight, Play, CheckCircle } from 'lucide-react';
 import Button from '../ui/Button';
 
 const CareerPathPlanner: React.FC = () => {
