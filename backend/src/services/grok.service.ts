@@ -145,11 +145,11 @@ interface ProfileAnalysisResult {
 
 class GrokService {
   private client: ReturnType<typeof ModelClient>;
-  private modelName: string = "xai/grok-3";
+  private modelName: string = "gpt-4o";
 
   constructor() {
     const token = process.env.GITHUB_TOKEN;
-    const endpoint = "https://models.github.ai/inference";
+    const endpoint = "https://models.inference.ai.azure.com";
 
     if (!token) throw new Error("Missing GITHUB_TOKEN in environment");
 
@@ -176,8 +176,8 @@ class GrokService {
     });
 
     if (isUnexpected(response)) {
-      console.error("Grok model API error:", response.body.error);
-      throw new Error("Model response failed");
+      console.error("GitHub Models API error:", response.body.error);
+      throw new Error(`GitHub Models API error: ${response.body.error?.message || 'Unknown error'}`);
     }
 
     return response.body.choices[0]?.message?.content || '';
