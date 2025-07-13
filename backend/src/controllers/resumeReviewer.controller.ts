@@ -5,18 +5,9 @@ import fs from 'fs';
 import { resumeStorage } from '../configs/cloudinary.js';
 import ResumeParserService from '../services/resumeParser.service.js';
 import ResumeAnalyzerService from '../services/resumeAnalyzer.service.js';
-// Update your imports to include the proper types
 import { Types } from 'mongoose';
-import ResumeReview from '../models/resumeReview.model';
+import ResumeReview from '../models/resumeReview.model.js';
 
-// Utility function to properly create subdocuments
-function createSubdocumentArray<T>(parentDoc: any, path: string, items: T[]): Types.DocumentArray<T> {
-  const schemaType = parentDoc.schema.path(path);
-  if (!schemaType) {
-    throw new Error(`Schema path ${path} not found`);
-  }
-  return new Types.DocumentArray(items.map(item => new schemaType.casterConstructor(item)));
-}
 // Configure multer for resume uploads
 const upload = multer({
   storage: resumeStorage,
@@ -39,6 +30,22 @@ const upload = multer({
 });
 
 export const uploadResume = upload.single('resume');
+
+// Helper function to convert plain objects to Mongoose DocumentArrays
+const convertToDocumentArray = (parentDoc: any, path: string, items: any[]): any => {
+  if (!items || !Array.isArray(items)) return [];
+  
+  try {
+    const schemaType = parentDoc.schema.path(path);
+    if (schemaType && schemaType.schema) {
+      return items.map(item => new schemaType.casterConstructor(item));
+    }
+    return items;
+  } catch (error) {
+    console.warn(`Could not convert ${path} to DocumentArray:`, error);
+    return items;
+  }
+};
 
 export const analyzeResume = async (req: Request, res: Response) => {
   const startTime = Date.now();
@@ -69,7 +76,43 @@ export const analyzeResume = async (req: Request, res: Response) => {
       experienceLevel: experienceLevel || 'mid',
       additionalContext,
       extractedText: '',
-      analysisResult: {} as any, // Temporary, will be updated
+      analysisResult: {
+        overallScore: 0,
+        contentAnalysis: {},
+        sectionAnalysis: [],
+        skillsAnalysis: {
+          identifiedSkills: [],
+          skillsGap: [],
+          recommendedSkills: [],
+          technicalSkills: [],
+          softSkills: []
+        },
+        experienceAnalysis: {},
+        atsAnalysis: {
+          overallScore: 0,
+          keywordMatch: 0,
+          formatting: 0,
+          readability: 0,
+          recommendations: [],
+          missingKeywords: [],
+          foundKeywords: []
+        },
+        industryAnalysis: {},
+        formattingAnalysis: {},
+        recommendations: {
+          immediate: [],
+          shortTerm: [],
+          longTerm: [],
+          priorityActions: []
+        },
+        industryBenchmarks: [],
+        improvementPlan: {
+          weeklyGoals: [],
+          monthlyGoals: [],
+          skillDevelopment: [],
+          networkingAdvice: []
+        }
+      },
       analysisStatus: 'processing'
     });
 
@@ -98,26 +141,29 @@ export const analyzeResume = async (req: Request, res: Response) => {
         fileType: fileExtension
       });
 
-      // Convert the analysis result to proper Mongoose document format
-      const convertedResult = {
-        ...analysisResult,
-        sectionAnalysis: createSubdocumentArray(
-          resumeReview, 
-          'analysisResult.sectionAnalysis', 
-          analysisResult.sectionAnalysis
-        ),
+      // Convert analysis result to proper Mongoose document format
+      const convertedAnalysisResult = {
+        overallScore: analysisResult.overallScore,
+        contentAnalysis: analysisResult.contentAnalysis,
+        sectionAnalysis: convertToDocumentArray(resumeReview, 'analysisResult.sectionAnalysis', analysisResult.sectionAnalysis),
         skillsAnalysis: {
-          ...analysisResult.skillsAnalysis,
-          identifiedSkills: createSubdocumentArray(
-            resumeReview,
-            'analysisResult.skillsAnalysis.identifiedSkills',
-            analysisResult.skillsAnalysis.identifiedSkills
-          )
-        }
+          identifiedSkills: convertToDocumentArray(resumeReview, 'analysisResult.skillsAnalysis.identifiedSkills', analysisResult.skillsAnalysis.identifiedSkills),
+          skillsGap: analysisResult.skillsAnalysis.skillsGap,
+          recommendedSkills: analysisResult.skillsAnalysis.recommendedSkills,
+          technicalSkills: analysisResult.skillsAnalysis.technicalSkills,
+          softSkills: analysisResult.skillsAnalysis.softSkills
+        },
+        experienceAnalysis: analysisResult.experienceAnalysis,
+        atsAnalysis: analysisResult.atsAnalysis,
+        industryAnalysis: analysisResult.industryAnalysis,
+        formattingAnalysis: analysisResult.formattingAnalysis,
+        recommendations: analysisResult.recommendations,
+        industryBenchmarks: convertToDocumentArray(resumeReview, 'analysisResult.industryBenchmarks', analysisResult.industryBenchmarks),
+        improvementPlan: analysisResult.improvementPlan
       };
 
       // Update with analysis results
-      resumeReview.analysisResult = convertedResult;
+      resumeReview.analysisResult = convertedAnalysisResult as any;
       resumeReview.analysisStatus = 'completed';
       const processingTime = Date.now() - startTime;
       resumeReview.processingTime = processingTime;
@@ -130,7 +176,7 @@ export const analyzeResume = async (req: Request, res: Response) => {
 
       return res.json({
         success: true,
-        analysis: analysisResult,
+        analysis: analysisResult, // Return the original analysis result for frontend
         reviewId: resumeReview._id,
         processingTime,
         message: 'Resume analysis completed successfully'
@@ -158,6 +204,7 @@ export const analyzeResume = async (req: Request, res: Response) => {
     });
   }
 };
+
 export const getResumeReviews = async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any).id;
@@ -455,14 +502,30 @@ export const reanalyzeResume = async (req: Request, res: Response) => {
         fileType: review.fileType
       });
 
+      // Convert analysis result to proper Mongoose document format
+      const convertedAnalysisResult = {
+        overallScore: analysisResult.overallScore,
+        contentAnalysis: analysisResult.contentAnalysis,
+        sectionAnalysis: convertToDocumentArray(review, 'analysisResult.sectionAnalysis', analysisResult.sectionAnalysis),
+        skillsAnalysis: {
+          identifiedSkills: convertToDocumentArray(review, 'analysisResult.skillsAnalysis.identifiedSkills', analysisResult.skillsAnalysis.identifiedSkills),
+          skillsGap: analysisResult.skillsAnalysis.skillsGap,
+          recommendedSkills: analysisResult.skillsAnalysis.recommendedSkills,
+          technicalSkills: analysisResult.skillsAnalysis.technicalSkills,
+          softSkills: analysisResult.skillsAnalysis.softSkills
+        },
+        experienceAnalysis: analysisResult.experienceAnalysis,
+        atsAnalysis: analysisResult.atsAnalysis,
+        industryAnalysis: analysisResult.industryAnalysis,
+        formattingAnalysis: analysisResult.formattingAnalysis,
+        recommendations: analysisResult.recommendations,
+        industryBenchmarks: convertToDocumentArray(review, 'analysisResult.industryBenchmarks', analysisResult.industryBenchmarks),
+        improvementPlan: analysisResult.improvementPlan
+      };
+
       // Update with new analysis results
       const processingTime = Date.now() - startTime;
-      // Convert sectionAnalysis to DocumentArray if necessary
-      if (Array.isArray(analysisResult.sectionAnalysis) && review.schema.path('analysisResult.sectionAnalysis')) {
-        // @ts-ignore
-        analysisResult.sectionAnalysis = (review as any).analysisResult.create(analysisResult.sectionAnalysis);
-      }
-      review.analysisResult = analysisResult;
+      review.analysisResult = convertedAnalysisResult as any;
       review.analysisStatus = 'completed';
       review.processingTime = processingTime;
       review.lastUpdated = new Date();
@@ -470,7 +533,7 @@ export const reanalyzeResume = async (req: Request, res: Response) => {
 
       return res.json({
         success: true,
-        analysis: analysisResult,
+        analysis: analysisResult, // Return the original analysis result for frontend
         processingTime,
         message: 'Resume reanalysis completed successfully'
       });
