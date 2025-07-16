@@ -1,6 +1,7 @@
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 import fs from 'fs';
+import path from 'path';
 
 interface ParsedResume {
   text: string;
@@ -27,6 +28,17 @@ class ResumeParserService {
     let metadata: any = {};
 
     try {
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
+      // Get file stats
+      const stats = fs.statSync(filePath);
+      if (stats.size === 0) {
+        throw new Error('File is empty');
+      }
+
       switch (fileType.toLowerCase()) {
         case 'pdf':
           const pdfData = await this.parsePDF(filePath);
@@ -52,6 +64,10 @@ class ResumeParserService {
           throw new Error(`Unsupported file type: ${fileType}`);
       }
 
+      if (!text || text.trim().length === 0) {
+        throw new Error('No text content could be extracted from the file. Please ensure the file contains readable text.');
+      }
+
       const sections = this.extractSections(text);
 
       return {
@@ -70,26 +86,53 @@ class ResumeParserService {
   }
 
   private async parsePDF(filePath: string): Promise<any> {
-    const dataBuffer = fs.readFileSync(filePath);
-    return await pdf(dataBuffer);
+    try {
+      const dataBuffer = fs.readFileSync(filePath);
+      const result = await pdf(dataBuffer);
+      
+      if (!result.text || result.text.trim().length === 0) {
+        throw new Error('PDF appears to be empty or contains no readable text');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('PDF parsing error:', error);
+      throw new Error(`Failed to parse PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private async parseDocx(filePath: string): Promise<any> {
-    const result = await mammoth.extractRawText({ path: filePath });
-    return {
-      text: result.value,
-      messages: result.messages
-    };
+    try {
+      const result = await mammoth.extractRawText({ path: filePath });
+      
+      if (!result.value || result.value.trim().length === 0) {
+        throw new Error('Document appears to be empty or contains no readable text');
+      }
+      
+      return {
+        text: result.value,
+        messages: result.messages
+      };
+    } catch (error) {
+      console.error('DOCX parsing error:', error);
+      throw new Error(`Failed to parse DOCX: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private countWords(text: string): number {
+    if (!text || text.trim().length === 0) return 0;
     return text.trim().split(/\s+/).filter(word => word.length > 0).length;
   }
 
   private detectFormatting(text: string): boolean {
+    if (!text) return false;
+    
     // Simple heuristic to detect if the resume has good formatting
     const lines = text.split('\n');
     const nonEmptyLines = lines.filter(line => line.trim().length > 0);
+    
+    if (nonEmptyLines.length === 0) return false;
+    
     const shortLines = nonEmptyLines.filter(line => line.trim().length < 50);
     
     // If more than 30% of lines are short, likely has good formatting/structure
@@ -98,6 +141,11 @@ class ResumeParserService {
 
   private extractSections(text: string): ParsedResume['sections'] {
     const sections: ParsedResume['sections'] = {};
+    
+    if (!text || text.trim().length === 0) {
+      return sections;
+    }
+    
     const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
     // Common section headers and their variations
@@ -168,6 +216,8 @@ class ResumeParserService {
   }
 
   extractSkills(text: string): string[] {
+    if (!text) return [];
+    
     const skillPatterns = [
       // Programming languages
       /\b(?:JavaScript|TypeScript|Python|Java|C\+\+|C#|PHP|Ruby|Go|Rust|Swift|Kotlin|Scala|R|MATLAB|SQL|HTML|CSS)\b/gi,
@@ -259,6 +309,8 @@ class ResumeParserService {
   }
 
   extractQuantifiedAchievements(text: string): string[] {
+    if (!text) return [];
+    
     const quantifiedPatterns = [
       /\b\d+%\b/g, // Percentages
       /\$[\d,]+(?:\.\d{2})?\b/g, // Dollar amounts
@@ -279,6 +331,8 @@ class ResumeParserService {
   }
 
   extractActionVerbs(text: string): string[] {
+    if (!text) return [];
+    
     const actionVerbs = [
       'achieved', 'administered', 'analyzed', 'built', 'collaborated', 'created', 'delivered',
       'developed', 'directed', 'established', 'executed', 'generated', 'implemented', 'improved',
