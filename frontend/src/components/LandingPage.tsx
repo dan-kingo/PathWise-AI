@@ -104,7 +104,7 @@ const LandingPage: React.FC = () => {
               <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <span className="ml-3 text-xl font-bold text-gray-900">Job Ready AI Coach</span>
+              <span className="ml-3 text-xl font-bold text-gray-900">PathWise AI</span>
             </div>
             
             {/* Desktop Navigation */}
@@ -178,7 +178,7 @@ const LandingPage: React.FC = () => {
                 <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"> Career Coach</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Get personalized career roadmaps, skill gap analysis, and step-by-step guidance to land your dream job. Powered by advanced AI technology.
+                Get personalized career roadmaps, skill gap analysis, profile review and step-by-step guidance to land your dream job. Powered by advanced AI technology.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button onClick={handleGetStarted} size="lg" className="text-lg px-8 py-4">
@@ -350,13 +350,13 @@ const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-                About Job Ready AI Coach
+                About PathWise AI
               </h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                We believe everyone deserves a clear path to their dream career. Our AI-powered platform combines cutting-edge technology with industry expertise to provide personalized career guidance.
+               At PathWise AI, we believe everyone deserves a clear, confident path to their dream career. Our AI-powered platform blends advanced technology with real-world industry insight to deliver personalized, actionable career guidance.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Founded by career experts and AI researchers, we've helped thousands of professionals transition to new roles, advance in their current fields, and achieve their career goals.
+                Whether you're refining your LinkedIn or GitHub profile, planning your future career path, or preparing your resume, PathWise AI is your smart guide to getting job-ready and staying ahead.
               </p>
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -400,7 +400,7 @@ const LandingPage: React.FC = () => {
                   <Mail className="w-6 h-6 text-purple-600 mr-4" />
                   <div>
                     <p className="font-medium text-gray-900">Email</p>
-                    <p className="text-gray-600">hello@jobreadyai.com</p>
+                    <p className="text-gray-600">pathwiseai@gmail.com</p>
                   </div>
                 </div>
                 <div className="flex items-center">
