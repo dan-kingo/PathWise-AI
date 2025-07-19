@@ -6,6 +6,23 @@ A comprehensive AI-powered career development platform that helps professionals 
 
 Job Ready AI Coach is a full-stack web application that leverages artificial intelligence to provide personalized career coaching. The platform offers AI-driven career path generation, profile optimization, resume analysis, and skill gap identification to help users achieve their professional goals.
 
+## Landing Page
+
+![Landing Page](./screenshots/a1_hero.png)
+
+## Dashboard 
+
+![Dashboard](./screenshots/al_dashboard.png)
+
+## Career Path Planner Page
+
+![Career Path Planner](./screenshots/a1_career.png)
+
+## Profile Review Page
+
+![Profile Review Page](./screenshots/a1_profile.png)
+
+
 ## ✨ Features
 
 ### 🎯 AI Career Path Planner
