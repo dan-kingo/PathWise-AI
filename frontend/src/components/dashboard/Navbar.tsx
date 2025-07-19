@@ -25,7 +25,7 @@ const Navbar: React.FC<NavbarTabs> = ({
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <span className="ml-3 text-[10px] md:text-xl font-bold text-gray-900">
-              Job Ready AI Coach
+              PathWise AI
             </span>
           </div>
           

@@ -12,7 +12,6 @@ import {
   User, 
   BarChart3,
   Search,
-  FileText,
   Sparkles
 } from 'lucide-react';
 
@@ -87,7 +86,6 @@ const Dashboard: React.FC = () => {
     { id: 'overview', name: 'Overview', icon: BarChart3 },
     { id: 'career', name: 'AI Career Planner', icon: Sparkles },
     { id: 'profile-reviewer', name: 'Profile Reviewer', icon: Search },
-    { id: 'resume-reviewer', name: 'Resume Reviewer', icon: FileText },
     { id: 'profile', name: 'Profile', icon: User },
   ];
 

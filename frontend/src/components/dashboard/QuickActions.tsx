@@ -1,6 +1,6 @@
 import React from 'react';
 import ActionCard from './ActionCard';
-import { Sparkles, Search, FileText, User } from 'lucide-react';
+import { Sparkles, Search, User } from 'lucide-react';
 
 interface QuickActionsProps {
   onCareerPlannerClick: () => void;
@@ -12,7 +12,6 @@ interface QuickActionsProps {
 const QuickActions: React.FC<QuickActionsProps> = ({
   onCareerPlannerClick,
   onProfileReviewerClick,
-  onResumeReviewerClick,
   onProfileClick
 }) => {
   const actions = [
@@ -30,13 +29,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
       onClick: onProfileReviewerClick,
       colorScheme: 'blue' as const
     },
-    {
-      icon: <FileText className="w-5 h-5" />,
-      title: "AI Resume Reviewer",
-      description: "Get comprehensive AI analysis of your resume and CV",
-      onClick: onResumeReviewerClick,
-      colorScheme: 'green' as const
-    },
+    
     {
       icon: <User className="w-5 h-5" />,
       title: "Update Profile",
