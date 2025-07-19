@@ -333,7 +333,7 @@ const ResumeReviewer: React.FC = () => {
 
   const downloadResume = async (reviewId: string) => {
     try {
-      window.open(`http://localhost:300/resume-reviewer/reviews/${reviewId}/download`, '_blank');
+      window.open(`http://localhost:3000/resume-reviewer/reviews/${reviewId}/download`, '_blank');
     } catch (error: any) {
       toast.error('Failed to download resume');
     }
