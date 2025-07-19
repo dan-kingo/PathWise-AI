@@ -13,7 +13,7 @@ export const profileSchema = z.object({
     fieldOfStudy: z.string().optional(),
   }).optional(),
   careerGoals: z.object({
-    targetRole: z.string().min(2, 'Target role is required'),
+    targetRole: z.string().optional(),
     industry: z.string().optional(),
     timeframe: z.string().optional(),
     description: z.string().optional(),

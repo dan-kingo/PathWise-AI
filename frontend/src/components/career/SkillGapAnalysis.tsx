@@ -13,7 +13,6 @@ import {
   Target,
   Save,
   BarChart3,
-  Award,
   ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';

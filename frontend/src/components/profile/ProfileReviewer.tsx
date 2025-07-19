@@ -295,13 +295,13 @@ const ProfileReviewer: React.FC = () => {
     setCompletedSuggestions([]);
   };
 
-  const toggleSuggestionCompletion = (suggestion: string) => {
-    if (completedSuggestions.includes(suggestion)) {
-      setCompletedSuggestions(completedSuggestions.filter(s => s !== suggestion));
-    } else {
-      setCompletedSuggestions([...completedSuggestions, suggestion]);
-    }
-  };
+  // const toggleSuggestionCompletion = (suggestion: string) => {
+  //   if (completedSuggestions.includes(suggestion)) {
+  //     setCompletedSuggestions(completedSuggestions.filter(s => s !== suggestion));
+  //   } else {
+  //     setCompletedSuggestions([...completedSuggestions, suggestion]);
+  //   }
+  // };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-100';
