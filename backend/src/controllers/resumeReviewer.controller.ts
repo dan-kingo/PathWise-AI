@@ -5,7 +5,6 @@ import fs from 'fs';
 import { resumeStorage } from '../configs/cloudinary.js';
 import ResumeParserService from '../services/resumeParser.service.js';
 import ResumeAnalyzerService from '../services/resumeAnalyzer.service.js';
-import { Types } from 'mongoose';
 import ResumeReview from '../models/resumeReview.model.js';
 
 // Configure multer for resume uploads

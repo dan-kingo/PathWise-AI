@@ -1,7 +1,6 @@
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 import fs from 'fs';
-import path from 'path';
 
 interface ParsedResume {
   text: string;

@@ -18,7 +18,7 @@ export const resumeStorage = new CloudinaryStorage({
     folder: 'job-ready-ai-coach/resumes',
     allowed_formats: ['pdf', 'doc', 'docx'],
     resource_type: 'raw', // For non-image files
-    public_id: (req: any, file: any) => {
+    public_id: (req: any, _file: any) => {
       const userId = req.user?.id || 'anonymous';
       const timestamp = Date.now();
       return `resume_${userId}_${timestamp}`;

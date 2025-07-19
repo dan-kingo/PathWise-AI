@@ -33,28 +33,28 @@ interface ProfileAnalysisRequest {
   };
 }
 
-interface ProfileAnalysisResult {
-  overallScore: number;
-  strengths: string[];
-  weaknesses: string[];
-  suggestions: {
-    category: string;
-    priority: 'high' | 'medium' | 'low';
-    suggestion: string;
-    impact: string;
-  }[];
-  industryBenchmarks: {
-    metric: string;
-    userScore: number;
-    industryAverage: number;
-    recommendation: string;
-  }[];
-  actionPlan: {
-    immediate: string[];
-    shortTerm: string[];
-    longTerm: string[];
-  };
-}
+// interface ProfileAnalysisResult {
+//   overallScore: number;
+//   strengths: string[];
+//   weaknesses: string[];
+//   suggestions: {
+//     category: string;
+//     priority: 'high' | 'medium' | 'low';
+//     suggestion: string;
+//     impact: string;
+//   }[];
+//   industryBenchmarks: {
+//     metric: string;
+//     userScore: number;
+//     industryAverage: number;
+//     recommendation: string;
+//   }[];
+//   actionPlan: {
+//     immediate: string[];
+//     shortTerm: string[];
+//     longTerm: string[];
+//   };
+// }
 
 export const analyzeProfile = async (req: Request, res: Response) => {
   try {
@@ -158,19 +158,21 @@ export const analyzeProfile = async (req: Request, res: Response) => {
     console.error('Profile analysis error:', error);
     
     // Handle specific GitHub API errors
-    if (error.message.includes('GitHub API error')) {
-      return res.status(400).json({
-        message: 'Unable to access GitHub profile. Please ensure the profile is public and the username is correct.',
-        error: error.message
-      });
-    }
-    
-    // Handle LinkedIn data requirement errors
-    if (error.message.includes('LinkedIn profile analysis requires')) {
-      return res.status(400).json({
-        message: error.message,
-        requiresLinkedInData: true
-      });
+    if (typeof error === 'object' && error !== null && 'message' in error && typeof (error as any).message === 'string') {
+      if ((error as any).message.includes('GitHub API error')) {
+        return res.status(400).json({
+          message: 'Unable to access GitHub profile. Please ensure the profile is public and the username is correct.',
+          error: (error as any).message
+        });
+      }
+      
+      // Handle LinkedIn data requirement errors
+      if ((error as any).message.includes('LinkedIn profile analysis requires')) {
+        return res.status(400).json({
+          message: (error as any).message,
+          requiresLinkedInData: true
+        });
+      }
     }
     
     return res.status(500).json({ 

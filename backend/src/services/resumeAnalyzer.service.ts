@@ -1,4 +1,3 @@
-import ResumeParserService from './resumeParser.service.js';
 import ModelClient, { isUnexpected } from "@azure-rest/ai-inference";
 import { AzureKeyCredential } from "@azure/core-auth";
 import dotenv from 'dotenv';
@@ -78,7 +77,6 @@ class ResumeAnalyzerService {
   async analyzeResume(request: ResumeAnalysisRequest): Promise<ResumeAnalysisResult> {
     const {
       extractedText,
-      extractedSections,
       targetRole,
       targetIndustry,
       experienceLevel,
@@ -256,7 +254,7 @@ Provide specific, measurable recommendations based on the actual resume content.
     return cleaned;
   }
 
-  private generateFallbackAnalysis(extractedText: string, targetRole?: string, experienceLevel?: string): ResumeAnalysisResult {
+  private generateFallbackAnalysis(extractedText: string, targetRole?: string, _experienceLevel?: string): ResumeAnalysisResult {
     const wordCount = extractedText.trim().split(/\s+/).length;
     const skillsFound = this.extractBasicSkills(extractedText);
     

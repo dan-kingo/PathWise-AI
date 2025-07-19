@@ -26,22 +26,22 @@ export const generateCareerPath = async (req: Request, res: Response) => {
     const careerPathData = await GrokService.generateCareerPath(careerPathRequest);
 
     // Save or update career path in database
-    const careerPath = await Career.findOneAndUpdate(
-      { userId },
-      {
-        ...careerPathData,
-        targetRole,
-        timeframe,
-        customSkills: customSkills || [],
-        customInterests: customInterests || [],
-        lastUpdated: new Date()
-      },
-      { 
-        new: true, 
-        upsert: true,
-        runValidators: true
-      }
-    );
+    // const careerPath = await Career.findOneAndUpdate(
+    //   { userId },
+    //   {
+    //     ...careerPathData,
+    //     targetRole,
+    //     timeframe,
+    //     customSkills: customSkills || [],
+    //     customInterests: customInterests || [],
+    //     lastUpdated: new Date()
+    //   },
+    //   { 
+    //     new: true, 
+    //     upsert: true,
+    //     runValidators: true
+    //   }
+    // );
 
     // Also update the profile's savedCareerPath for backward compatibility
     await Profile.findOneAndUpdate(
@@ -182,7 +182,7 @@ export const getResourceRecommendations = async (req: Request, res: Response) =>
 };
 
 // Skill gap analysis removed as requested
-export const analyzeSkillGap = async (req: Request, res: Response) => {
+export const analyzeSkillGap = async (_req: Request, res: Response) => {
   return res.status(501).json({ 
     message: 'Skill gap analysis is not implemented yet. This feature will be available soon.',
     success: false
