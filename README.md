@@ -1,10 +1,10 @@
-# Job Ready AI Coach
+# PathWise AI
 
 A comprehensive AI-powered career development platform that helps professionals advance their careers through personalized guidance, skill analysis, and intelligent recommendations.
 
 ## 🚀 Overview
 
-Job Ready AI Coach is a full-stack web application that leverages artificial intelligence to provide personalized career coaching. The platform offers AI-driven career path generation, profile optimization, resume analysis, and skill gap identification to help users achieve their professional goals.
+PathWise AI (formely Job-Ready-AI-Coach) is a full-stack web application that leverages artificial intelligence to provide personalized career coaching. The platform offers AI-driven career path generation, profile optimization, resume analysis, and skill gap identification to help users achieve their professional goals.
 
 ## Landing Page
 
