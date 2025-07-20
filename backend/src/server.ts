@@ -43,7 +43,7 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:5173', 'https://api-pathwiseai.onrender.com/'],
+  origin: ['https://pathwise-ai-theta.vercel.app', 'http://localhost:5173', 'https://api-pathwiseai.onrender.com/'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
