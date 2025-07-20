@@ -13,7 +13,6 @@ import authRoutes from "./routes/auth.route.js";
 import profileRoutes from "./routes/profile.route.js";
 import careerRoutes from "./routes/career.route.js";
 import profileReviewerRoutes from "./routes/profileReviewer.route.js";
-import resumeReviewerRoutes from "./routes/resumeReviewer.route.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 dotenv.config();
@@ -78,7 +77,6 @@ app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
 app.use('/career', careerRoutes);
 app.use('/profile-reviewer', profileReviewerRoutes);
-app.use('/resume-reviewer', resumeReviewerRoutes);
 
 // Health check
 app.get("/", (_req: Request, res: Response) => {

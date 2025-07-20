@@ -11,6 +11,7 @@
   "dependencies": {
     "@azure-rest/ai-inference": "^1.0.0-beta.6",
     "@azure/core-auth": "^1.9.0",
+    "@types/pdf-parse": "^1.1.5",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
@@ -42,7 +43,6 @@
     "@types/nodemailer": "^6.4.17",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.16",
-    "@types/pdf-parse": "^1.1.5",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   }
