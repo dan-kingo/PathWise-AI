@@ -363,7 +363,7 @@ export const googleCallback = (req: Request, res: Response) => {
   const user = req.user as any;
 
   if (!user) {
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/error?message=Authentication failed`);
+    return res.redirect(`${'https://pathwise-ai-theta.vercel.app'}/auth/error?message=Authentication failed`);
   }
 
   // Create JWT
@@ -380,5 +380,5 @@ export const googleCallback = (req: Request, res: Response) => {
   );
 
   // Redirect to frontend with token
-  res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/success?token=${token}`);
+  res.redirect(`${'https://pathwise-ai-theta.vercel.app'}/auth/success?token=${token}`);
 };
